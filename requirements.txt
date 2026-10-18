@@ -1,0 +1,25 @@
+# --- Web Server & Production Runner ---
+aiohttp==3.9.3
+gunicorn==21.2.0
+
+# --- Database & Async Drivers ---
+asyncpg==0.29.0
+
+# --- Telegram Bot Framework ---
+aiogram==3.4.1
+
+# --- Security, Auth & Cryptography ---
+python-dotenv==1.0.1
+PyJWT==2.8.0
+bcrypt==4.1.2
+cryptography>=42.0.0
+
+# --- Firebase Push Notifications ---
+firebase-admin>=6.5.0
+
+# --- Cache, Real-time Pub/Sub & Performance ---
+redis>=5.0.1
+hiredis>=2.3.2
+
+# --- System Health & Resource Monitoring ---
+psutil>=5.9.8

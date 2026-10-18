@@ -1,0 +1,2658 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+
+    <!-- 👇 قيود التطبيق الأصلي (VIP) 👇 -->
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>غرفة العمليات | القيادة العليا</title>
+      
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase للإشعارات -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
+    
+    <!-- مكتبة الرسوم البيانية -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        /* 👇 متغيرات ألوان OLED Luxury & AI Tech 👇 */
+        :root {
+            --primary: #818cf8; /* بنفسجي/نيلي حديث (Electric Indigo) */
+            --primary-dark: #6366f1;
+            --bg-dark: #000000; /* أسود OLED نقي للفخامة والعمق */
+            --panel-bg: #09090b; /* رمادي داكن جداً للبطاقات */
+            --border-color: #27272a; /* حدود دقيقة وأنيقة */
+            --text: #ffffff; /* أبيض ناصع للتباين العالي */
+            --text-light: #a1a1aa; /* رمادي معدني للنصوص الثانوية */
+            --danger: #f87171; /* أحمر ناعم */
+            --success: #34d399; /* أخضر نعناعي */
+            --warning: #fbbf24; /* أصفر ذهبي */
+            --shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.8);
+            --radius: 16px; /* زوايا دائرية أكثر نعومة (Apple Style) */
+        }
+
+        * { 
+            box-sizing: border-box; margin: 0; padding: 0; 
+            font-family: 'Cairo', sans-serif; 
+            user-select: none; -webkit-user-select: none; 
+            -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
+        }
+        
+        body { 
+            background-color: var(--bg-dark);
+            /* 👇 خلفية Mesh Gradient متوافقة مع OLED 👇 */
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.12) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text); 
+            display: flex; height: 100vh; overflow: hidden; 
+        }
+
+        /* 👇 شريط تمرير Cyberpunk 👇 */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(2, 6, 23, 0.5); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: rgba(0, 243, 255, 0.3); border-radius: 10px; transition: 0.3s; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary); box-shadow: 0 0 10px var(--primary); }
+        
+        /* شريط التنقل الجانبي (زجاجي) */
+        .sidebar { 
+            width: 260px; 
+            background: rgba(2, 6, 23, 0.6); 
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-left: 1px solid var(--glass-border);
+            color: white; display: flex; flex-direction: column; transition: 0.3s; z-index: 100; 
+        }
+        .sidebar-header { padding: 25px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .sidebar-header h2 { font-weight: 900; font-size: 22px; color: var(--primary); text-shadow: 0 0 10px rgba(0, 243, 255, 0.5); }
+        .nav-links { flex: 1; padding: 20px 0; overflow-y: auto; }
+        .nav-link { padding: 15px 25px; display: flex; align-items: center; gap: 15px; color: #cbd5e1; text-decoration: none; cursor: pointer; transition: 0.3s; font-weight: bold; border-right: 4px solid transparent; }
+        .nav-link:hover, .nav-link.active { background: rgba(0, 243, 255, 0.1); color: var(--primary); border-right-color: var(--primary); text-shadow: 0 0 8px rgba(0, 243, 255, 0.4); }
+        .nav-link i { font-size: 20px; width: 25px; text-align: center; }
+        
+        /* المحتوى الرئيسي */
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: transparent; }
+        .topbar { 
+            background: rgba(15, 23, 42, 0.3); 
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; 
+        }
+        .topbar h3 { color: white !important; text-shadow: 0 0 5px rgba(255,255,255,0.3); }
+        .content-area { flex: 1; padding: 30px; overflow-y: auto; }
+        
+        /* البطاقات والإحصائيات (Enterprise Flat Design) */
+        .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card, .panel { 
+            background: var(--panel-bg); 
+            padding: 25px; border-radius: var(--radius); 
+            box-shadow: var(--shadow); 
+            border: 1px solid var(--border-color); 
+            transition: 0.2s ease-in-out; 
+        }
+        .stat-card { display: flex; align-items: center; gap: 20px; }
+        .stat-card:hover { transform: translateY(-3px); border-color: var(--primary-dark); }
+        .stat-icon { width: 60px; height: 60px; border-radius: 15px; display: flex; justify-content: center; align-items: center; font-size: 24px; background: rgba(0,0,0,0.3) !important; border: 1px solid rgba(255,255,255,0.1); }
+          /* 👇 خطوط البنوك (Fintech Typography) للإحصائيات 👇 */
+        .stat-info h3 { font-size: 34px; font-weight: 300; color: white; letter-spacing: -1px; margin-bottom: 4px; }
+        .stat-info p { color: var(--text-light); font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+
+        /* الجداول والنماذج */
+        .panel-title { font-size: 18px; font-weight: 900; margin-bottom: 20px; color: white; display: flex; align-items: center; gap: 10px; text-shadow: 0 0 5px rgba(255,255,255,0.2); }
+        
+        /* 👇 الجداول الاحترافية (Sticky Header) 👇 */
+        .table-container { overflow-x: auto; max-height: 450px; overflow-y: auto; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); background: rgba(0,0,0,0.2); }
+        table { width: 100%; border-collapse: collapse; color: white; position: relative; }
+        th, td { padding: 15px; text-align: right; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        th { background: rgba(15, 23, 42, 0.95); color: var(--primary); font-weight: bold; text-shadow: 0 0 5px rgba(0, 243, 255, 0.3); position: sticky; top: 0; z-index: 10; backdrop-filter: blur(5px); box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        tr { transition: background 0.2s; }
+        tr:hover { background: rgba(0, 243, 255, 0.05); }
+        
+        /* 👇 شارات الحالة (Status Badges) 👇 */
+        .badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; display: inline-flex; align-items: center; gap: 5px; letter-spacing: 0.5px; }
+        .badge-success { background: rgba(57, 255, 20, 0.1); color: var(--success); border: 1px solid rgba(57, 255, 20, 0.3); }
+        .badge-danger { background: rgba(255, 0, 60, 0.1); color: var(--danger); border: 1px solid rgba(255, 0, 60, 0.3); }
+        .badge-warning { background: rgba(245, 175, 25, 0.1); color: #f5af19; border: 1px solid rgba(245, 175, 25, 0.3); }
+        .badge-info { background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3); }
+        
+        /* 👇 حالات الفراغ الإبداعية (Empty States) 👇 */
+        .empty-state { padding: 40px 20px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .empty-state i { font-size: 55px; color: rgba(255,255,255,0.05); margin-bottom: 10px; text-shadow: 0 0 15px rgba(0, 243, 255, 0.1); }
+        .empty-state h4 { color: white; font-size: 18px; margin: 0; font-weight: 900; }
+        .empty-state p { color: var(--text-light); font-size: 14px; margin: 0; max-width: 300px; line-height: 1.6; }
+        
+        .input-field { 
+            width: 100%; padding: 15px; 
+            background: rgba(0, 0, 0, 0.3); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            color: white; border-radius: 12px; margin-bottom: 15px; font-family: 'Cairo'; outline: none; transition: 0.3s; 
+        }
+        .input-field::placeholder { color: #64748b; }
+        .input-field:focus { border-color: var(--primary); box-shadow: 0 0 15px rgba(0, 243, 255, 0.2); background: rgba(0,0,0,0.5); }
+        
+        /* أزرار النيون والتفاعلات الدقيقة */
+        .btn { 
+            background: transparent; color: var(--primary); 
+            border: 1px solid var(--primary); 
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.1), inset 0 0 5px rgba(0, 243, 255, 0.1);
+            padding: 12px 25px; border-radius: 10px; font-weight: bold; cursor: pointer; 
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); /* حركة أنعم */
+            display: inline-flex; align-items: center; gap: 8px; 
+        }
+        .btn:hover { background: var(--primary); color: #000; box-shadow: 0 0 20px rgba(0, 243, 255, 0.6); transform: translateY(-2px); }
+        .btn:active { transform: scale(0.95) translateY(0); box-shadow: 0 0 10px rgba(0, 243, 255, 0.4); } /* انكماش عند الضغط */
+        
+        .btn-danger { color: var(--danger); border-color: var(--danger); box-shadow: 0 0 10px rgba(255, 0, 60, 0.1), inset 0 0 5px rgba(255, 0, 60, 0.1); }
+        .btn-danger:hover { background: var(--danger); color: white; box-shadow: 0 0 20px rgba(255, 0, 60, 0.6); }
+        
+        /* 👇 مربعات التحديد (Cyber Checkbox) 👇 */
+        .cyber-checkbox { appearance: none; -webkit-appearance: none; width: 20px; height: 20px; border: 2px solid var(--primary); border-radius: 5px; background: rgba(0,0,0,0.5); cursor: pointer; position: relative; transition: 0.2s; display: inline-block; vertical-align: middle; }
+        .cyber-checkbox:checked { background: var(--primary); box-shadow: 0 0 10px var(--primary); }
+        .cyber-checkbox:checked::after { content: '✔'; position: absolute; color: #000; font-size: 14px; top: -1px; left: 2px; font-weight: 900; }
+        
+        /* 👇 شريط الإجراءات الجماعية العائم 👇 */
+        .bulk-action-bar { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border: 1px solid var(--primary); padding: 15px 25px; border-radius: 20px; display: flex; align-items: center; gap: 20px; box-shadow: 0 10px 30px rgba(0, 243, 255, 0.3); transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 1000; }
+        .bulk-action-bar.active { bottom: 30px; }
+        .bulk-count { background: var(--primary); color: #000; padding: 5px 12px; border-radius: 15px; font-weight: 900; font-size: 14px; }
+
+        /* الشاشات وتأثيرات الدخول المستقبلية */
+        .screen { display: none; }
+        .screen.active { 
+            display: block; 
+            animation: cyberFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; 
+        }
+        
+        @keyframes cyberFadeIn { 
+            0% { 
+                opacity: 0; 
+                transform: scale(0.95) translateY(15px); 
+                filter: blur(10px); 
+            } 
+            100% { 
+                opacity: 1; 
+                transform: scale(1) translateY(0); 
+                filter: blur(0); 
+            } 
+        }
+
+        /* تأثير النبض المضيء للعناوين الرئيسية */
+        .panel-title i, .sidebar-header h2 {
+            animation: neonPulse 2s infinite alternate;
+        }
+
+        @keyframes neonPulse {
+            0% { text-shadow: 0 0 5px rgba(0, 243, 255, 0.2); }
+            100% { text-shadow: 0 0 15px rgba(0, 243, 255, 0.8), 0 0 30px rgba(0, 243, 255, 0.4); }
+        }
+
+        /* تأثير دخول متسلسل للبطاقات (Staggered Animation) */
+        .stat-card {
+            animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+        }
+        .stat-card:nth-child(1) { animation-delay: 0.1s; }
+        .stat-card:nth-child(2) { animation-delay: 0.2s; }
+        .stat-card:nth-child(3) { animation-delay: 0.3s; }
+        .stat-card:nth-child(4) { animation-delay: 0.4s; }
+
+        @keyframes slideUpFade {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 👇 تأثير التحميل الهيكلي (Skeleton Loader) 👇 */
+        .skeleton {
+            background: linear-gradient(90deg, rgba(15, 23, 42, 0.6) 25%, rgba(0, 243, 255, 0.1) 50%, rgba(15, 23, 42, 0.6) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-color: rgba(255,255,255,0.02) !important;
+            box-shadow: none !important;
+            pointer-events: none;
+        }
+        .skeleton * { visibility: hidden; } /* إخفاء المحتوى الداخلي أثناء التحميل */
+        
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* Terminal Style */
+        .terminal-box { font-family: 'Courier New', Courier, monospace; background: rgba(0,0,0,0.8); color: var(--success); padding: 20px; border-radius: 10px; height: 400px; overflow-y: auto; border: 1px solid rgba(57, 255, 20, 0.3); box-shadow: inset 0 0 20px rgba(0,0,0,0.8); direction: ltr; text-align: left; }
+        .terminal-line { margin-bottom: 8px; border-bottom: 1px dashed rgba(57, 255, 20, 0.1); padding-bottom: 5px; }
+        .terminal-time { color: #888; font-size: 12px; margin-right: 10px; }
+
+        #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(10px); border: 1px solid var(--primary); color: white; padding: 12px 25px; border-radius: 25px; font-weight: bold; z-index: 9999; display: none; box-shadow: 0 0 20px rgba(0, 243, 255, 0.4); }
+        
+        /* 👇 مركز الإشعارات الجانبي 👇 */
+        .notif-drawer { position: fixed; top: 0; left: -350px; width: 320px; height: 100%; background: rgba(2, 6, 23, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-right: 1px solid var(--glass-border); z-index: 1000; transition: 0.4s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; box-shadow: 10px 0 30px rgba(0,0,0,0.5); }
+        .notif-drawer.open { left: 0; }
+        .notif-header { padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; }
+        .notif-header h3 { color: white; margin: 0; font-size: 18px; display: flex; align-items: center; gap: 10px; }
+        .close-notif { background: none; border: none; color: var(--text-light); font-size: 20px; cursor: pointer; transition: 0.2s; }
+        .close-notif:hover { color: var(--danger); transform: scale(1.1); }
+        .notif-body { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .notif-item { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; animation: slideUpFade 0.3s ease forwards; border-right: 3px solid var(--primary); }
+        .notif-item.error { border-right-color: var(--danger); }
+        .notif-time { font-size: 11px; color: var(--text-light); margin-bottom: 5px; display: block; }
+        .notif-text { font-size: 13px; color: white; line-height: 1.5; }
+        
+        .bell-btn { position: relative; background: none; border: none; color: white; font-size: 22px; cursor: pointer; transition: 0.3s; }
+        .bell-btn:hover { color: var(--primary); text-shadow: 0 0 10px var(--primary); }
+        .bell-badge { position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; font-size: 10px; font-weight: bold; width: 18px; height: 18px; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: 2px solid #0f172a; display: none; }
+
+        /* 👇 قائمة الإجراءات المنسدلة (Action Menu) 👇 */
+        .action-menu { position: relative; display: inline-block; }
+        .action-btn { background: transparent; border: 1px solid var(--border-color); color: var(--text-light); padding: 6px 12px; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        .action-btn:hover { background: rgba(255,255,255,0.05); color: white; }
+        .dropdown-content { 
+            display: none; position: absolute; left: 0; top: 100%; margin-top: 5px;
+            background: var(--panel-bg); min-width: 140px; border-radius: 8px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5); border: 1px solid var(--border-color); 
+            z-index: 100; overflow: hidden; text-align: right;
+        }
+        /* إجبار القائمة المنسدلة على الظهور فوق كل شيء */
+        .dropdown-content.show { display: block !important; animation: popIn 0.2s ease; z-index: 99999 !important; }
+        .dropdown-content a { 
+            color: var(--text); padding: 10px 15px; text-decoration: none; 
+            display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px; transition: 0.2s;
+        }
+        .dropdown-content a:hover { background: rgba(255,255,255,0.05); padding-right: 20px; }
+
+        /* ================= الوضع الفاتح الفخم (Light Mode) ================= */
+        body.light-mode {
+            --primary: #4f46e5; /* بنفسجي أغمق للوضوح */
+            --primary-dark: #4338ca;
+            --bg-dark: #f8fafc; /* خلفية رمادي ثلجي مريحة */
+            --panel-bg: #ffffff; /* بطاقات بيضاء نقية */
+            --border-color: #e2e8f0; /* حدود فاتحة */
+            --text: #0f172a; /* نص أسود داكن */
+            --text-light: #64748b; /* نص رمادي */
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+            
+            /* تحديث الخلفية الحية للوضع الفاتح */
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.08) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.08) 0px, transparent 50%);
+        }
+        
+        /* تعديلات جمالية للوضع الفاتح */
+        body.light-mode .bottom-nav { background: rgba(255, 255, 255, 0.85); box-shadow: 0 20px 40px rgba(0,0,0,0.08), inset 0 1px 1px rgba(255,255,255,0.5); }
+        body.light-mode .dropdown-content { background: rgba(255, 255, 255, 0.95); box-shadow: 0 -10px 50px rgba(0,0,0,0.1); }
+        body.light-mode .dropdown-content::before { background: rgba(0,0,0,0.1); }
+        body.light-mode .dropdown-content a { border-bottom: 1px solid rgba(0,0,0,0.05); color: var(--text); }
+        body.light-mode .dropdown-content a:hover { background: rgba(0,0,0,0.03); }
+        body.light-mode .list-item { background: #ffffff; }
+        body.light-mode .list-item:hover { background: #f1f5f9; }
+        body.light-mode .stat-info h3, body.light-mode .panel-title { color: var(--text); text-shadow: none; }
+        body.light-mode .input-field { background: #f1f5f9; color: var(--text); }
+        body.light-mode .input-field:focus { background: #ffffff; }
+        body.light-mode .cyber-checkbox { background: #ffffff; }
+        body.light-mode .bottom-nav-item.active { color: var(--primary-dark); background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1)); box-shadow: inset 0 1px 1px rgba(0,0,0,0.05); }
+        body.light-mode .bottom-nav-item.active i { text-shadow: none; }
+        body.light-mode .topbar h3 { color: var(--text) !important; text-shadow: none; }
+        body.light-mode .bell-btn { color: var(--text-light); }
+        body.light-mode .bell-btn:hover { color: var(--primary); text-shadow: none; }
+        body.light-mode .cmd-box { background: #ffffff; }
+        body.light-mode .cmd-input { color: var(--text); }
+        body.light-mode .cmd-item:hover, body.light-mode .cmd-item.active { background: rgba(0,0,0,0.05); color: var(--text); }
+        body.light-mode #login-screen .panel { background: rgba(255, 255, 255, 0.85); }
+        body.light-mode #login-screen h2, body.light-mode #login-screen p { color: var(--text); }
+        body.light-mode #login-screen .input-field { background: rgba(0,0,0,0.05); color: var(--text); }
+        body.light-mode #login-screen .btn { background: var(--primary); color: white; }
+
+        /* استجابة الشاشات الصغيرة */
+        #menu-btn { display: none; background: none; border: none; font-size: 24px; color: white; cursor: pointer; margin-left: 15px; text-shadow: 0 0 5px rgba(255,255,255,0.5); }
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(3px); z-index: 90; }
+        .overlay.active { display: block; }
+        
+               /* 👇 الشريط السفلي العائم (OLED Luxury Bottom Nav) 👇 */
+        .bottom-nav {
+            display: none; position: fixed; bottom: 20px; left: 5%; width: 90%;
+            background: rgba(9, 9, 11, 0.85); /* أسود زجاجي عميق */
+            backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 50px; z-index: 1000;
+            justify-content: space-around; align-items: center; padding: 8px 10px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.05);
+        }
+        .bottom-nav-item {
+            color: var(--text-light); text-align: center; font-size: 11px; font-weight: bold;
+            display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); flex: 1; padding: 8px 0; border-radius: 30px;
+        }
+        .bottom-nav-item i { font-size: 22px; transition: 0.3s; }
+        
+        /* 👇 التأثير اللوني الفخم للعنصر النشط 👇 */
+        .bottom-nav-item.active { 
+            color: white; 
+            background: linear-gradient(135deg, rgba(129, 140, 248, 0.2), rgba(168, 85, 247, 0.2));
+            box-shadow: inset 0 1px 1px rgba(255,255,255,0.1);
+            transform: translateY(-5px);
+        }
+        .bottom-nav-item.active i { 
+            color: var(--primary); 
+            text-shadow: 0 0 15px var(--primary); /* إضاءة نيون خفيفة للأيقونة */
+            transform: scale(1.15);
+        }
+
+        /* 👇 حركة انزلاق القائمة من الأسفل (مكانها الصحيح خارج الميديا كويري) 👇 */
+        @keyframes slideUpSheet { 
+            from { transform: translateY(100%); } 
+            to { transform: translateY(0); } 
+        }
+
+        @media (max-width: 768px) {
+            /* 👇 تحويل القوائم المنسدلة إلى (iOS Bottom Sheet) 👇 */
+            .dropdown-content {
+                position: fixed; top: auto !important; bottom: 0; left: 0; width: 100%;
+                border-radius: 25px 25px 0 0; padding: 20px 15px 40px;
+                background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(20px);
+                animation: slideUpSheet 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+                border: none; border-top: 1px solid rgba(255,255,255,0.1);
+                box-shadow: 0 -10px 50px rgba(0,0,0,0.7);
+            }
+            /* مؤشر السحب العلوي للقائمة */
+            .dropdown-content::before {
+                content: ''; display: block; width: 40px; height: 5px;
+                background: rgba(255,255,255,0.2); border-radius: 10px;
+                margin: 0 auto 20px;
+            }
+            .dropdown-content a { padding: 15px; font-size: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+            
+            .sidebar { display: none !important; } 
+            #menu-btn { display: none !important; } 
+            
+            .bottom-nav { display: flex; } 
+            .content-area { padding: 15px; padding-bottom: 80px; } 
+            
+            .grid-4 { grid-template-columns: repeat(2, 1fr) !important; gap: 10px; margin-bottom: 15px; } 
+            #charts-container { grid-template-columns: 1fr !important; } 
+            
+            .topbar { padding: 12px 15px; }
+            .topbar h3 { font-size: 16px !important; }
+            
+            .stat-card { flex-direction: column; text-align: center; padding: 15px 10px; gap: 10px; } 
+            .stat-icon { width: 40px; height: 40px; font-size: 18px; margin: 0 auto; }
+            .stat-info h3 { font-size: 18px; }
+            .stat-info p { font-size: 11px; }
+            
+            th, td { padding: 10px 8px; font-size: 12px; } 
+            .badge { padding: 4px 8px; font-size: 10px; }
+            .btn { padding: 8px 12px; font-size: 12px; } 
+            
+            .bulk-action-bar { width: 90%; flex-direction: column; gap: 10px; padding: 15px; text-align: center; bottom: -150px; }
+            .hide-on-mobile { display: none !important; }
+        }
+
+        /* النوافذ الذكية (Glassmorphism) */
+        #smart-dialog-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999999; justify-content: center; align-items: center; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+        .smart-dialog-content { 
+            background: var(--glass-bg); width: 90%; max-width: 350px; border-radius: var(--radius); padding: 25px; text-align: center; 
+            border: 1px solid var(--glass-border); box-shadow: 0 0 30px rgba(0, 243, 255, 0.2);
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); color: white;
+        }
+        @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        .sd-icon { font-size: 50px; margin-bottom: 15px; text-shadow: 0 0 15px currentColor; }
+        .sd-title { font-size: 18px; font-weight: 900; margin-bottom: 10px; color: white; }
+        .sd-msg { font-size: 14px; color: var(--text-light); margin-bottom: 20px; line-height: 1.5; }
+        .sd-input { 
+            width: 100%; padding: 14px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); 
+            color: white; border-radius: 12px; margin-bottom: 20px; font-family: 'Cairo'; font-size: 16px; text-align: center; outline: none; display: none; transition: 0.3s; 
+        }
+        .sd-input:focus { border-color: var(--primary); box-shadow: 0 0 15px rgba(0, 243, 255, 0.3); }
+        .sd-buttons { display: flex; gap: 10px; }
+        .sd-btn { flex: 1; padding: 12px; border-radius: 12px; font-weight: bold; font-size: 14px; cursor: pointer; border: 1px solid transparent; color: #000; transition: 0.2s; }
+        .sd-btn:active { transform: scale(0.95); }
+        .sd-confirm { background: var(--primary); box-shadow: 0 0 15px rgba(0, 243, 255, 0.4); }
+        .sd-cancel { background: transparent; color: var(--danger); border-color: var(--danger); box-shadow: 0 0 10px rgba(255, 0, 60, 0.1); }
+        .sd-cancel:hover { background: var(--danger); color: white; box-shadow: 0 0 20px rgba(255, 0, 60, 0.5); }
+
+        /* تنسيقات المحادثة للمدير */
+        .chat-bubble { max-width: 80%; padding: 10px 15px; border-radius: 15px; position: relative; font-size: 14px; line-height: 1.5; clear: both; }
+        .chat-bubble.admin { background: var(--primary); color: #000; align-self: flex-end; border-bottom-left-radius: 0; box-shadow: 0 4px 10px rgba(0,243,255,0.2); }
+        .chat-bubble.store { background: rgba(255,255,255,0.1); color: white; align-self: flex-start; border-bottom-right-radius: 0; border: 1px solid rgba(255,255,255,0.2); }
+        .chat-time { font-size: 10px; opacity: 0.7; display: block; margin-top: 5px; text-align: right; }
+
+        /* 👇 لوحة الأوامر السريعة (Command Palette) 👇 */
+        #command-palette {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); z-index: 999999;
+            justify-content: center; align-items: flex-start; padding-top: 5vh; /* 👈 رفعناها للأعلى لتناسب كيبورد الهاتف */
+        }
+        .cmd-box {
+            background: var(--panel-bg); width: 90%; max-width: 600px; border-radius: 16px;
+            border: 1px solid var(--border-color); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            overflow: hidden; animation: slideDown 0.2s ease-out;
+        }
+        @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .cmd-input-wrapper { padding: 20px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 15px; }
+        .cmd-input-wrapper i { color: var(--text-light); font-size: 20px; }
+        .cmd-input {
+            width: 100%; background: transparent; border: none; color: white; font-size: 18px;
+            outline: none; font-family: 'Cairo';
+        }
+        .cmd-results { max-height: 350px; overflow-y: auto; padding: 10px 0; }
+        .cmd-item {
+            padding: 15px 20px; display: flex; align-items: center; gap: 15px; cursor: pointer;
+            color: var(--text-light); transition: 0.2s;
+        }
+        .cmd-item:hover, .cmd-item.active { background: rgba(255,255,255,0.05); color: white; border-right: 3px solid var(--primary); }
+        .cmd-item i { width: 20px; text-align: center; color: var(--primary); }
+        .cmd-shortcut { margin-right: auto; background: rgba(255,255,255,0.1); padding: 3px 8px; border-radius: 6px; font-size: 11px; font-family: monospace; }
+
+        /* 👇 تصميم القوائم الحديثة (Modern List View) 👇 */
+        .list-view { display: flex; flex-direction: column; gap: 12px; margin-top: 15px; }
+        .list-item { 
+            background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); 
+            border-radius: 16px; padding: 16px; display: flex; align-items: center; gap: 15px; 
+            transition: 0.2s; position: relative; /* تم إزالة overflow: hidden لإظهار القائمة */
+        }
+        
+        .list-item:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); }
+        .list-item-main { flex: 1; display: flex; flex-direction: column; gap: 6px; justify-content: center; }
+        .list-item-title { font-weight: 700; font-size: 15px; color: white; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+        .list-item-subtitle { font-size: 12px; color: var(--text-light); display: flex; align-items: center; gap: 12px; }
+        .list-item-actions { display: flex; align-items: center; gap: 10px; }
+        
+        /* شريط التحكم العلوي للقوائم */
+        .list-header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 0 5px; }
+
+        /* 👇 زر المراسلة العائم (Floating Action Button - FAB) 👇 */
+        .chat-fab {
+            position: fixed; bottom: 90px; right: 20px; /* يطفو فوق الشريط السفلي */
+            width: 60px; height: 60px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white; font-size: 24px; border: none;
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.5), inset 0 2px 2px rgba(255,255,255,0.2);
+            z-index: 999; cursor: pointer; transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex; justify-content: center; align-items: center;
+        }
+        .chat-fab:hover { transform: scale(1.1); }
+        .chat-fab:active { transform: scale(0.9); }
+        .chat-fab-badge {
+            position: absolute; top: -5px; left: -5px; background: var(--danger);
+            color: white; font-size: 11px; font-weight: bold; width: 22px; height: 22px;
+            border-radius: 50%; display: flex; justify-content: center; align-items: center;
+            border: 2px solid var(--bg-dark); display: none;
+        }
+
+    </style>
+    <!-- 🚨 صائد الأخطاء الشامل (مؤمن) 🚨 -->
+    <script>
+        let lastErrorTime = 0;
+
+        // 🛡️ دالة حماية النصوص من ثغرات XSS (حقن الأكواد الخبيثة)
+        window.escapeHTML = function(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        };
+
+        window.onerror = function(message, source, lineno, colno, error) {
+            if (message.toString().toLowerCase().includes("script error") && lineno === 0) return false;
+            let now = Date.now();
+            if (now - lastErrorTime < 5000) return false; 
+            lastErrorTime = now;
+
+            let errStr = `السطر: ${lineno}\nالعمود: ${colno}\nالخطأ: ${message}`;
+            
+            // التحقق الآمن عبر التوكن بدلاً من الرابط
+            if (localStorage.getItem('admin_token')) {
+                alert("🚨 تم اكتشاف خطأ برمجي!\n\n" + errStr);
+            }
+
+            fetch('/api/log_error', { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({error: errStr}) 
+            }).catch(e => console.log("فشل إرسال الخطأ للسيرفر"));
+            return true; 
+        };
+
+        window.addEventListener('unhandledrejection', function(event) {
+            let now = Date.now();
+            if (now - lastErrorTime < 5000) return;
+            lastErrorTime = now;
+            
+            let reason = event.reason ? (event.reason.stack || event.reason.message || event.reason) : "غير معروف";
+            if (localStorage.getItem('admin_token')) {
+                alert("🚨 خطأ في الاتصال أو جلب البيانات!\n\n" + reason);
+            }
+            
+            fetch('/api/log_error', { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({error: `Promise Error: ${reason}`}) 
+            }).catch(e => console.log(e));
+        });
+
+    </script>
+</head>
+<body>
+
+    <div id="toast">رسالة تنبيه</div>
+
+    <!-- 👇 شاشة الدخول الفخمة (OLED Luxury) 👇 -->
+    <div id="login-screen" class="screen active" style="width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; background: transparent; padding: 20px;">
+        <div class="panel" style="width: 100%; max-width: 400px; text-align: center; background: rgba(9, 9, 11, 0.6); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8); border-radius: 24px;">
+            
+            <!-- أيقونة البصمة المتوهجة -->
+            <div style="width: 80px; height: 80px; background: linear-gradient(135deg, var(--primary), #a855f7); border-radius: 24px; margin: 0 auto 25px; display: flex; justify-content: center; align-items: center; box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);">
+                <i class="fas fa-fingerprint" style="font-size: 38px; color: white;"></i>
+            </div>
+            
+            <h2 style="margin-bottom: 8px; font-weight: 700; font-size: 24px; letter-spacing: -0.5px; color: white;">القيادة العليا</h2>
+            <p style="color: var(--text-light); font-size: 13px; margin-bottom: 30px;">يرجى تأكيد هويتك للوصول إلى غرفة العمليات</p>
+            
+            <input type="password" id="admin-pass" class="input-field" placeholder="كلمة المرور..." style="text-align: center; font-size: 22px; letter-spacing: 8px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 18px; color: white;">
+            
+            <!-- زر الدخول الأبيض الناصع (Apple Style) -->
+            <button class="btn" style="width: 100%; justify-content: center; font-size: 16px; padding: 16px; border-radius: 16px; background: white; color: black; border: none; font-weight: 900; box-shadow: 0 4px 15px rgba(255,255,255,0.15); transition: 0.2s;" onclick="loginAdmin()" onmouseover="this.style.transform='scale(0.98)'" onmouseout="this.style.transform='scale(1)'">
+                دخول آمن <i class="fas fa-arrow-left" style="margin-right: 8px;"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- واجهة الإدارة (تظهر بعد الدخول) -->
+    <div id="dashboard-wrapper" style="display: none; width: 100%; height: 100%;">
+        
+        <!-- الشريط الجانبي -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>دُكّاني <span style="color:white;">Admin</span></h2>
+            </div>
+            <div class="nav-links">
+                <div class="nav-link active" onclick="switchTab('dashboard', this)"><i class="fas fa-chart-pie"></i> الإحصائيات</div>
+                <div class="nav-link" onclick="switchTab('stores', this)"><i class="fas fa-store"></i> إدارة البقالات</div>
+                <!-- 👇 الخيار الجديد: إدارة الاشتراكات 👇 -->
+                <div class="nav-link" onclick="switchTab('subscriptions', this)"><i class="fas fa-crown" style="color: #f5af19;"></i> إدارة الاشتراكات</div>
+                <div class="nav-link" onclick="switchTab('terminal', this)"><i class="fas fa-terminal"></i> سجل العمليات</div>
+                <div class="nav-link" onclick="switchTab('support', this); loadAdminChats();"><i class="fas fa-headset" style="color: #00f3ff;"></i> الدعم الفني والمحادثات</div>
+
+                <!-- 👇 الخيارات الجديدة 👇 -->
+                <div class="nav-link" onclick="switchTab('catalog', this)"><i class="fas fa-globe" style="color: #3b82f6;"></i> الكتالوج المركزي</div>
+                <div class="nav-link" onclick="switchTab('recycle-bin', this)"><i class="fas fa-trash-restore" style="color: var(--danger);"></i> سلة المهملات</div>
+                
+                <!-- 👇 الزر الجديد لرادار الخمول 👇 -->
+                <div class="nav-link" onclick="switchTab('churn-radar', this); loadChurnRadar();"><i class="fas fa-satellite-dish" style="color: #ff4757;"></i> رادار الخمول (الانسحاب)</div>
+                
+                <!-- 👇 الزر الجديد لرادار الأرباح 👇 -->
+                <div class="nav-link" onclick="switchTab('billing', this); loadBillingStats();"><i class="fas fa-money-bill-wave" style="color: #0ba360;"></i> رادار الأرباح والاشتراكات</div>
+
+                <div class="nav-link" onclick="switchTab('broadcast', this)"><i class="fas fa-bullhorn"></i> الإذاعة والإشعارات</div>
+                <div class="nav-link" onclick="switchTab('settings', this)"><i class="fas fa-cog"></i> الإعدادات والأمان</div>
+            </div>
+            <div style="padding: 20px;">
+                <button class="btn btn-danger" style="width: 100%; justify-content: center;" onclick="logout()"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</button>
+            </div>
+        </div>
+
+        <!-- طبقة التعتيم للموبايل -->
+        <div id="overlay" class="overlay" onclick="toggleSidebar()"></div>
+
+        <!-- 👇 زر المراسلة العائم (Chat FAB) 👇 -->
+        <button class="chat-fab" onclick="switchTab('support', null); loadAdminChats();">
+            <i class="fas fa-comment-dots"></i>
+            <span class="chat-fab-badge" id="chat-fab-badge">0</span>
+        </button>
+
+        <!-- 👇 شريط التنقل السفلي للهاتف (4 أزرار متوازنة) 👇 -->
+        <div class="bottom-nav">
+            <div class="bottom-nav-item active" onclick="switchTab('dashboard', this)"><i class="fas fa-chart-pie"></i> الرئيسية</div>
+            <div class="bottom-nav-item" onclick="switchTab('stores', this)"><i class="fas fa-store"></i> البقالات</div>
+            <div class="bottom-nav-item" onclick="switchTab('subscriptions', this)"><i class="fas fa-crown"></i> VIP</div>
+            <!-- زر المزيد يفتح لوحة الأوامر السريعة للوصول لباقي الصفحات -->
+            <div class="bottom-nav-item" onclick="openCommandPalette()"><i class="fas fa-th-large"></i> المزيد</div>
+        </div>
+
+        <!-- 👇 مركز الإشعارات الجانبي 👇 -->
+        <div id="notif-drawer" class="notif-drawer">
+            <div class="notif-header">
+                <h3><i class="fas fa-history" style="color: var(--primary);"></i> سجل النظام</h3>
+                <button class="close-notif" onclick="toggleNotifDrawer()"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="notif-body" class="notif-body">
+                <div class="empty-state" style="margin-top: 50px;">
+                    <i class="fas fa-bell-slash" style="font-size: 40px;"></i>
+                    <p style="margin-top: 10px;">لا توجد إشعارات جديدة</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- المحتوى -->
+        <div class="main-content">
+            <div class="topbar">
+                <div style="display: flex; align-items: center;">
+                    <button id="menu-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+                    <h3 id="page-title" style="font-weight: 900; color: white;">الإحصائيات العامة</h3>
+                </div>
+                <div style="display: flex; gap: 15px; align-items: center;">
+                    <!-- 👇 زر تبديل المظهر (فاتح/داكن) 👇 -->
+                    <button class="bell-btn" onclick="toggleTheme()" id="theme-toggle-btn" style="color: var(--warning);">
+                        <i class="fas fa-sun"></i>
+                    </button>
+
+                    <!-- 👇 زر الأوامر السريعة المخصص للهاتف 👇 -->
+                    <button class="bell-btn" onclick="openCommandPalette()" style="color: var(--primary);">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    
+                    <!-- 👇 أيقونة الإشعارات 👇 -->
+                    <button class="bell-btn" onclick="toggleNotifDrawer()">
+                        <i class="fas fa-bell"></i>
+                        <span id="bell-badge" class="bell-badge">0</span>
+                    </button>
+                    <span style="font-weight: bold; color: #cbd5e1;" class="hide-on-mobile">مرحباً، أيها المدير 👑</span>
+                </div>
+            </div>
+
+            <div class="content-area" id="main-content-area">
+                <!-- 👇 مؤشر السحب للتحديث (Pull to Refresh) انسيابي 👇 -->
+                <div id="ptr-indicator" style="text-align: center; padding: 15px; height: 0; opacity: 0; overflow: hidden; transition: all 0.3s ease; color: var(--text-light); font-size: 14px;">
+                    <i class="fas fa-circle-notch fa-spin" style="color: var(--primary); margin-left: 5px;"></i> جاري تحديث البيانات...
+                </div>
+                
+                <!-- 1. شاشة الإحصائيات -->
+                <div id="dashboard-screen" class="screen active">
+                    <div class="grid-4" id="stats-container">
+                        <!-- 👇 شاشات التحميل الهيكلية تظهر قبل جلب البيانات 👇 -->
+                        <div class="stat-card skeleton" style="height: 112px;"></div>
+                        <div class="stat-card skeleton" style="height: 112px;"></div>
+                        <div class="stat-card skeleton" style="height: 112px;"></div>
+                        <div class="stat-card skeleton" style="height: 112px;"></div>
+                    </div>
+                    
+                    <!-- 👇 الرسوم البيانية التفاعلية 👇 -->
+                    <div class="grid-4" style="grid-template-columns: 2fr 1fr; margin-top: 20px; display: none;" id="charts-container">
+                        <div class="panel" style="border-color: rgba(0, 243, 255, 0.3);">
+                            <div class="panel-title"><i class="fas fa-chart-line"></i> معدل نمو البقالات (آخر 7 أيام)</div>
+                            <canvas id="growthChart" height="100"></canvas>
+                        </div>
+                        <div class="panel" style="border-color: rgba(245, 175, 25, 0.3);">
+                            <div class="panel-title"><i class="fas fa-chart-pie"></i> توزيع الاشتراكات</div>
+                            <canvas id="packageChart" height="200"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- 👇 رادار صحة الخوادم 👇 -->
+                    <div class="panel" style="margin-top: 20px; border-color: var(--primary); background: rgba(11, 163, 96, 0.05);">
+                        <div class="panel-title" style="color: var(--primary);"><i class="fas fa-server"></i> رادار صحة الخوادم (System Health)</div>
+                        <div class="grid-4" id="health-container">
+                            <!-- 👇 شاشات التحميل الهيكلية للرادار 👇 -->
+                            <div class="stat-card skeleton" style="height: 112px;"></div>
+                            <div class="stat-card skeleton" style="height: 112px;"></div>
+                            <div class="stat-card skeleton" style="height: 112px;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                              <!-- 2. شاشة البقالات -->
+                <div id="stores-screen" class="screen">
+                    <div class="panel">
+                        <div class="panel-title"><i class="fas fa-store"></i> قائمة البقالات المسجلة</div>
+                        <input type="text" class="input-field" placeholder="🔍 ابحث عن بقالة بالاسم أو الرقم..." onkeyup="searchStores(this.value)">
+                        
+                        <!-- 👇 شريط التحكم العلوي 👇 -->
+                        <div class="list-header-actions">
+                            <label style="display: flex; align-items: center; gap: 8px; color: var(--text-light); font-size: 13px; cursor: pointer;">
+                                <input type="checkbox" class="cyber-checkbox" id="selectAll" onclick="toggleSelectAll(this)"> تحديد الكل
+                            </label>
+                            <span style="font-size: 12px; color: var(--text-light);">إجمالي البقالات</span>
+                        </div>
+                        
+                        <!-- 👇 القائمة الحديثة (List View) 👇 -->
+                        <div class="list-view" id="stores-list"></div>
+                    </div>
+                </div>
+
+                <!-- 👇 شريط الإجراءات الجماعية العائم 👇 -->
+                <div id="bulk-action-bar" class="bulk-action-bar">
+                    <div style="color: white; font-weight: bold;">تم تحديد <span id="bulk-count" class="bulk-count">0</span> بقالة</div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn" style="padding: 8px 15px; font-size: 13px;" onclick="bulkAction('broadcast')"><i class="fas fa-bullhorn"></i> إرسال إشعار</button>
+                        <button class="btn" style="padding: 8px 15px; font-size: 13px; border-color: #f5af19; color: #f5af19;" onclick="bulkAction('vip')"><i class="fas fa-crown"></i> ترقية VIP</button>
+                    </div>
+                </div>
+
+                <!-- 👇 شاشة الاشتراكات (VIP) الجديدة 👇 -->
+                <div id="subscriptions-screen" class="screen">
+                    <div class="panel">
+                        <div class="panel-title" style="color: var(--warning);"><i class="fas fa-crown"></i> إدارة الاشتراكات والباقات</div>
+                        <p style="color: var(--text-light); margin-bottom: 15px;">قم بترقية البقالات إلى VIP، أو تمديد فترتها التجريبية، أو إيقاف البقالات المنتهية.</p>
+                        
+                        <!-- 👇 القائمة الحديثة (List View) 👇 -->
+                        <div class="list-view" id="subs-list"></div>
+                    </div>
+                </div>
+
+                <!-- شاشة سجل العمليات (Terminal) -->
+                <div id="terminal-screen" class="screen">
+                    <div class="panel">
+                        <div class="panel-title" style="color: var(--success); justify-content: space-between; flex-wrap: wrap;">
+                            <div><i class="fas fa-terminal"></i> سجل العمليات الحي</div>
+                            <div style="display: flex; gap: 10px;">
+                                <button class="btn" style="padding: 5px 10px; font-size: 12px; border-color: var(--text-light); color: var(--text-light);" onclick="filterTerminal('all')">الكل 🌍</button>
+                                <button class="btn" style="padding: 5px 10px; font-size: 12px; border-color: var(--warning); color: var(--warning);" onclick="filterTerminal('دخول|ظل')">دخول 🔐</button>
+                                <button class="btn" style="padding: 5px 10px; font-size: 12px; border-color: var(--primary); color: var(--primary);" onclick="filterTerminal('تمديد|تحديث|حالة')">إدارة 🏪</button>
+                                <button class="btn" style="padding: 5px 10px; font-size: 12px; border-color: var(--danger); color: var(--danger);" onclick="filterTerminal('إذاعة|نسخة|إجباري|استعادة')">نظام ⚙️</button>
+                            </div>
+                        </div>
+                        <div class="terminal-box" id="terminal-logs">
+                            <div style="color:#888;">[System] Waiting for logs...</div>
+                        </div>
+                        <button class="btn" style="margin-top: 15px; border-color: var(--success); color: var(--success);" onclick="loadTerminalLogs()"><i class="fas fa-sync-alt"></i> تحديث السجل</button>
+                    </div>
+                </div>
+
+                <!-- 👇 شاشة الكتالوج المركزي 👇 -->
+                <div id="catalog-screen" class="screen">
+                    <div class="panel">
+                        <div class="panel-title" style="color: #3b82f6;"><i class="fas fa-globe"></i> الكتالوج المركزي (Global Catalog)</div>
+                        <p style="color: var(--text-light); margin-bottom: 15px;">أضف منتجات قياسية لتظهر تلقائياً لأي بقالة جديدة.</p>
+                        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                            <input type="text" id="new-cat-name" class="input-field" placeholder="اسم المنتج..." style="margin: 0;">
+                            <input type="text" id="new-cat-category" class="input-field" placeholder="القسم..." style="margin: 0;">
+                            <button class="btn" style="background: #3b82f6;" onclick="addCatalogItem()"><i class="fas fa-plus"></i> إضافة</button>
+                        </div>
+                        <div class="table-container">
+                            <table>
+                                <thead><tr><th>ID</th><th>المنتج</th><th>القسم</th><th>إجراء</th></tr></thead>
+                                <tbody id="catalog-list"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 👇 شاشة سلة المهملات 👇 -->
+                <div id="recycle-bin-screen" class="screen">
+                    <div class="panel">
+                        <div class="panel-title" style="color: var(--danger);"><i class="fas fa-trash-restore"></i> سلة المهملات الذكية</div>
+                        <p style="color: var(--text-light); margin-bottom: 15px;">استعادة البقالات، الزبائن، أو المنتجات المحذوفة بالخطأ.</p>
+                        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                            <select id="recycle-table" class="input-field" style="margin: 0; cursor: pointer;" onchange="loadRecycleBin()">
+                                <option value="stores">البقالات المحذوفة</option>
+                                <option value="customers">الزبائن المحذوفين</option>
+                                <option value="store_products">المنتجات المحذوفة</option>
+                            </select>
+                            <button class="btn" style="background: var(--danger);" onclick="loadRecycleBin()"><i class="fas fa-sync"></i> تحديث</button>
+                        </div>
+                        <div class="table-container">
+                            <table>
+                                <thead><tr><th>ID</th><th>الاسم / التفاصيل</th><th>إجراء</th></tr></thead>
+                                <tbody id="recycle-list"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 👇 شاشة رادار الخمول (Churn Radar) 👇 -->
+                <div id="churn-radar-screen" class="screen">
+                    <div class="panel" style="border-color: #ff4757;">
+                        <div class="panel-title" style="color: #ff4757;"><i class="fas fa-satellite-dish"></i> رادار الخمول وتتبع النشاط</div>
+                        <p style="color: var(--text-light); margin-bottom: 15px;">اكتشف البقالات التي توقفت عن استخدام النظام مؤخراً لكي تتواصل معهم وتقدم لهم الدعم أو العروض قبل أن تخسرهم.</p>
+                        
+                        <div class="table-container">
+                            <table>
+                                <thead><tr><th>البقالة</th><th>الباقة</th><th>آخر نشاط</th><th>طلبات (آخر 7 أيام)</th><th>الحالة</th><th>إجراء</th></tr></thead>
+                                <tbody id="churn-radar-list">
+                                    <tr><td colspan="6" style="text-align:center;">جاري مسح النظام... 📡</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 👇 شاشة رادار الأرباح (SaaS Billing) 👇 -->
+                <div id="billing-screen" class="screen">
+                    <div class="grid-4" style="grid-template-columns: 1fr 1fr; margin-bottom: 20px;">
+                        <div class="stat-card" style="background: rgba(11, 163, 96, 0.1); border-color: #0ba360;">
+                            <div class="stat-icon" style="color: #0ba360;"><i class="fas fa-hand-holding-usd"></i></div>
+                            <div class="stat-info"><h3 id="bill-month-rev">0</h3><p>أرباح هذا الشهر</p></div>
+                        </div>
+                        <div class="stat-card" style="background: rgba(59, 130, 246, 0.1); border-color: #3b82f6;">
+                            <div class="stat-icon" style="color: #3b82f6;"><i class="fas fa-piggy-bank"></i></div>
+                            <div class="stat-info"><h3 id="bill-total-rev">0</h3><p>إجمالي الأرباح التاريخية</p></div>
+                        </div>
+                    </div>
+
+                    <div class="panel" style="margin-bottom: 20px; border-color: #0ba360;">
+                        <div class="panel-title" style="color: #0ba360;"><i class="fas fa-plus-circle"></i> تسجيل دفعة اشتراك جديدة</div>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <select id="bill-store-select" class="input-field" style="flex: 2; margin: 0;"></select>
+                            <input type="number" id="bill-amount" class="input-field" placeholder="المبلغ (ريال)" style="flex: 1; margin: 0;">
+                            <input type="text" id="bill-note" class="input-field" placeholder="ملاحظة (مثال: اشتراك شهر مايو)" style="flex: 2; margin: 0;">
+                            <button class="btn" style="background: #0ba360; color: white;" onclick="submitSubscriptionPayment()">تسجيل الدفعة 💰</button>
+                        </div>
+                    </div>
+
+                    <div class="panel">
+                        <div class="panel-title"><i class="fas fa-history"></i> سجل المدفوعات (SaaS Ledger)</div>
+                        <div class="table-container">
+                            <table>
+                                <thead><tr><th>البقالة</th><th>المبلغ</th><th>التاريخ</th><th>البيان</th></tr></thead>
+                                <tbody id="billing-list">
+                                    <tr><td colspan="4" style="text-align:center;">جاري التحميل... ⏳</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. شاشة الإذاعة -->
+                <div id="broadcast-screen" class="screen">
+                    <div class="panel">
+                        <div class="panel-title"><i class="fas fa-bullhorn"></i> إرسال إشعار موجه</div>
+                        <p style="color: var(--text-light); margin-bottom: 15px;">أرسل رسالة أو تنبيه لأصحاب البقالات مع إمكانية تحديد الفئة المستهدفة.</p>
+                        
+                        <select id="broadcast-target" class="input-field" style="cursor: pointer; appearance: none;">
+                            <option value="all" style="color: #000;">🌍 إرسال لجميع البقالات</option>
+                            <option value="suspended" style="color: #000;">🔴 البقالات الموقوفة فقط (تنبيه سداد)</option>
+                            <option value="trial_ending" style="color: #000;">⏱️ البقالات التي ستنتهي فترتها قريباً (خلال 7 أيام)</option>
+                        </select>
+                        
+                        <textarea id="broadcast-msg" class="input-field" rows="4" placeholder="اكتب رسالتك هنا..."></textarea>
+                        <button class="btn" onclick="sendBroadcast()"><i class="fas fa-paper-plane"></i> إرسال الإشعار الآن</button>
+                    </div>
+                </div>
+
+                <!-- 4. شاشة الإعدادات -->
+                <div id="settings-screen" class="screen">
+                    <div class="grid-4" style="grid-template-columns: 1fr 1fr;">
+                        
+                        <!-- 👇 أدوات القيادة العليا (God Mode) 👇 -->
+                        <div class="panel" style="grid-column: 1 / -1; border-color: #f5af19; background: rgba(245, 175, 25, 0.05);">
+                            <div class="panel-title" style="color: #f5af19;"><i class="fas fa-bolt"></i> أدوات القيادة العليا (God Mode)</div>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                                <button class="btn" style="background: #1e293b; justify-content: center;" onclick="toggleAdminBiometrics()">
+                                    <i id="admin-bio-icon" class="fas fa-fingerprint" style="color: #94a3b8;"></i> البصمة
+                                </button>
+                                <button class="btn" style="background: #3b82f6; justify-content: center;" onclick="downloadBackup()">
+                                    <i class="fas fa-database"></i> نسخة احتياطية
+                                </button>
+                                <button class="btn" style="background: #f5af19; color: #000; justify-content: center;" onclick="forceUpdateApp()">
+                                    <i class="fas fa-rocket"></i> إجبار التحديث
+                                </button>
+                                <button class="btn" style="background: #ff4757; justify-content: center;" onclick="toggleMaintenanceMode()">
+                                    <i id="maintenance-icon" class="fas fa-power-off"></i> وضع الصيانة
+                                </button>
+                            </div>
+                        </div>
+                        <!-- 👆 نهاية أدوات القيادة العليا 👆 -->
+
+                        <!-- تفعيل الإشعارات للمدير -->
+                        <div class="panel">
+                            <div class="panel-title"><i class="fas fa-bell"></i> إشعارات النظام</div>
+                            <p style="color: #64748b; margin-bottom: 15px;">قم بتفعيل الإشعارات على هذا المتصفح ليصلك تنبيه فور تسجيل بقالة جديدة أو حدوث خطأ.</p>
+                            <button id="enable-notif-btn" class="btn" style="background: #f5af19; color: black;" onclick="enableAdminNotifications()">
+                                <i class="fas fa-bell-slash"></i> تفعيل الإشعارات الآن
+                            </button>
+                        </div>
+
+                        <!-- تغيير كلمة المرور (محدث للسحابة) -->
+                        <div class="panel" style="border-color: rgba(255,255,255,0.05); background: rgba(0,0,0,0.2);">
+                            <div class="panel-title" style="color: var(--text-light);"><i class="fas fa-shield-alt"></i> حماية القيادة العليا</div>
+                            <div class="empty-state" style="padding: 10px;">
+                                <i class="fas fa-lock" style="font-size: 30px; color: var(--warning); margin-bottom: 15px;"></i>
+                                <p style="font-size: 13px; color: var(--text-light); line-height: 1.6;">
+                                    لأسباب أمنية قصوى (God Mode)، تم إغلاق تغيير كلمة المرور من داخل التطبيق.   
+
+                                    لتغيير كلمة المرور، يرجى تعديل متغير <b style="color: white;">ADMIN_PASSWORD</b> من خلال إعدادات السيرفر السحابي (Render / Heroku) وإعادة التشغيل.
+                                </p>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                <!-- 5. شاشة الدعم الفني والمحادثات -->
+                <div id="support-screen" class="screen">
+                    <div class="panel">
+                        <div class="panel-title" style="color: #00f3ff;"><i class="fas fa-headset"></i> رسائل البقالات (الدعم الفني)</div>
+                        <p style="color: var(--text-light); margin-bottom: 15px;">تواصل مباشرة مع أصحاب البقالات لحل مشاكلهم بدون الحاجة للتيليجرام.</p>
+                        
+                        <div class="table-container">
+                            <table>
+                                <thead><tr><th>البقالة</th><th>آخر رسالة</th><th>الوقت</th><th>إجراء</th></tr></thead>
+                                <tbody id="admin-chat-list">
+                                    <tr><td colspan="4" style="text-align:center; color:#aaa;">جاري التحميل... ⏳</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 👇 نافذة المحادثة المباشرة للمدير 👇 -->
+                <div id="adminChatModal" class="overlay" style="display: none; z-index: 100000; justify-content: center; align-items: center;">
+                    <div class="panel" style="width: 95%; max-width: 500px; height: 80vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; border: 1px solid var(--primary); box-shadow: 0 0 30px rgba(0,243,255,0.2);">
+                        <div style="padding: 15px 20px; background: rgba(15,23,42,0.9); border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center;">
+                            <h3 id="admin-chat-store-name" style="color: white; margin: 0; font-size: 16px;"><i class="fas fa-store" style="color: var(--primary);"></i> اسم البقالة</h3>
+                            <button onclick="document.getElementById('adminChatModal').style.display='none'" style="background: none; border: none; color: var(--danger); font-size: 20px; cursor: pointer;"><i class="fas fa-times"></i></button>
+                        </div>
+                        
+                        <div id="admin-chat-messages" style="flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; background: rgba(0,0,0,0.3);">
+                            <!-- الرسائل ستظهر هنا -->
+                        </div>
+                        
+                        <div style="padding: 15px; background: rgba(15,23,42,0.9); border-top: 1px solid rgba(255,255,255,0.1); display: flex; gap: 10px;">
+                            <input type="hidden" id="admin-chat-store-id">
+                            <input type="text" id="admin-chat-input" class="input-field" style="margin: 0; flex: 1; border-radius: 20px;" placeholder="اكتب ردك هنا...">
+                            <button class="btn" style="border-radius: 50%; width: 50px; height: 50px; padding: 0; justify-content: center;" onclick="sendAdminChatMessage()"><i class="fas fa-paper-plane"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // إعدادات Firebase (نفس الإعدادات الخاصة بك)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDvCRGzkVUgZodqd63QZCkwjfCjOhc6nYo",
+            authDomain: "dukkani-app-30b43.firebaseapp.com",
+            projectId: "dukkani-app-30b43",
+            storageBucket: "dukkani-app-30b43.firebasestorage.app",
+            messagingSenderId: "757873553883",
+            appId: "1:757873553883:web:44c531dfc7dbe1f807f7fe"
+        };
+        if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+        const messaging = firebase.messaging.isSupported() ? firebase.messaging() : null;
+        
+        // ================= نظام التوجيه الذكي (Deep Linking) =================
+        window.executePendingDeepLink = function() {
+            let savedAction = sessionStorage.getItem('pendingDeepLink');
+            if (!savedAction) return;
+
+            let action = JSON.parse(savedAction);
+            sessionStorage.removeItem('pendingDeepLink'); 
+
+            if (action.route === 'open_chat' || action.route === 'chat') {
+                if (typeof switchTab === 'function') {
+                    switchTab('support', null);
+                    if (typeof loadAdminChats === 'function') loadAdminChats();
+                }
+            }
+        };
+
+        // استقبال الإشعارات أثناء فتح اللوحة في المتصفح
+        if (messaging) {
+            messaging.onMessage((payload) => {
+                let title = payload.notification?.title || payload.data?.title || 'إشعار جديد';
+                let body = payload.notification?.body || payload.data?.body || '';
+                let route = payload.data?.route || payload.data?.action || null;
+                
+                showToast(`🔔 ${title}: ${body}`);
+                
+                if (route === 'open_chat' || route === 'chat') {
+                    if (typeof loadAdminChats === 'function') loadAdminChats(); // تحديث صامت للمحادثات
+                }
+            });
+        }
+
+        // استقبال توجيهات Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.addEventListener('message', event => {
+                if (event.data && event.data.type === 'DEEP_LINK') {
+                    sessionStorage.setItem('pendingDeepLink', JSON.stringify({ route: event.data.route }));
+                    if (typeof window.executePendingDeepLink === 'function') window.executePendingDeepLink();
+                }
+            });
+            
+            // فحص الرابط عند الفتح
+            setTimeout(() => {
+                const urlParams = new URLSearchParams(window.location.search);
+                const action = urlParams.get('action');
+                if (action) {
+                    sessionStorage.setItem('pendingDeepLink', JSON.stringify({ route: action }));
+                    if (typeof window.executePendingDeepLink === 'function') window.executePendingDeepLink();
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
+            }, 800);
+        }
+
+        let unreadNotifs = 0;       
+
+        // 🛡️ معترض الطلبات (Fetch Interceptor) لالتقاط انتهاء الجلسة (401)
+        const originalFetch = window.fetch;
+        window.fetch = async function() {
+            try {
+                let response = await originalFetch.apply(this, arguments);
+                // إذا رد السيرفر بأن التوكن منتهي أو غير صالح
+                if (response.status === 401) {
+                    showToast("⚠️ انتهت الجلسة، يرجى تسجيل الدخول مجدداً", false);
+                    localStorage.removeItem('admin_token');
+                    setTimeout(() => {
+                        window.location.reload(); // إعادة تحميل الصفحة لإظهار شاشة الدخول
+                    }, 1500);
+                }
+                return response;
+            } catch (error) {
+                throw error;
+            }
+        };
+
+        function toggleNotifDrawer() {
+            document.getElementById('notif-drawer').classList.toggle('open');
+            // تصفير العداد عند فتح الدرج
+            unreadNotifs = 0;
+            document.getElementById('bell-badge').style.display = 'none';
+        }
+
+        function showToast(msg, isSuccess = true) {
+            if(navigator.vibrate) navigator.vibrate(isSuccess ? 30 : [50, 50]); 
+            
+            // 1. إظهار التنبيه السريع (Toast)
+            let toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.style.background = isSuccess ? 'rgba(11, 163, 96, 0.9)' : 'rgba(255, 71, 87, 0.9)';
+            toast.style.display = 'block';
+            setTimeout(() => toast.style.display = 'none', 3000);
+
+            // 2. حفظ الإشعار في الدرج الجانبي
+            let notifBody = document.getElementById('notif-body');
+            if(notifBody.innerHTML.includes('fa-bell-slash')) notifBody.innerHTML = ''; // إزالة حالة الفراغ
+            
+            let time = new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
+            let notifHtml = `
+                <div class="notif-item ${isSuccess ? '' : 'error'}">
+                    <span class="notif-time">${time}</span>
+                    <div class="notif-text">${msg}</div>
+                </div>
+            `;
+            notifBody.insertAdjacentHTML('afterbegin', notifHtml); // إضافة في الأعلى
+
+            // 3. زيادة عداد الإشعارات غير المقروءة
+            let drawer = document.getElementById('notif-drawer');
+            if(!drawer.classList.contains('open')) {
+                unreadNotifs++;
+                let badge = document.getElementById('bell-badge');
+                badge.innerText = unreadNotifs;
+                badge.style.display = 'flex';
+                badge.style.animation = 'popIn 0.3s ease';
+            }
+        }
+
+        function toggleSidebar() {
+            if(navigator.vibrate) navigator.vibrate(30); // 👈 اهتزاز
+            document.querySelector('.sidebar').classList.toggle('open');
+            document.getElementById('overlay').classList.toggle('active');
+        }
+
+        function switchTab(tabId, btnElement) {                    
+            if(navigator.vibrate) navigator.vibrate(30); 
+            
+            document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-link').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.bottom-nav-item').forEach(btn => btn.classList.remove('active')); 
+            
+            document.getElementById(tabId + '-screen').classList.add('active');
+            
+            if(btnElement) {
+                // 👇 هنا أضفنا التحقق لمنع الخطأ 👇
+                if (btnElement.classList) {
+                    btnElement.classList.add('active');
+                }
+                if(btnElement.innerText && btnElement.innerText.trim() !== "المزيد") {
+                    document.getElementById('page-title').innerText = btnElement.innerText.trim();
+                }
+            }
+            
+            if (window.innerWidth <= 768 && document.querySelector('.sidebar') && document.querySelector('.sidebar').classList.contains('open')) {
+                toggleSidebar();
+            }
+        }
+
+
+        async function loginAdmin(autoPassword = null) {
+            let password = autoPassword || document.getElementById('admin-pass').value;
+            try {
+                let res = await fetch('/api/admin/login', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({password})
+                });
+                let data = await res.json();
+                if(data.status === 'success') {
+                    localStorage.setItem('admin_token', data.token);
+                    document.getElementById('login-screen').style.display = 'none';
+                    document.getElementById('dashboard-wrapper').style.display = 'flex';
+                    loadDashboard();
+                    startAdminServices(); // تشغيل الخدمات فوراً
+                } else {
+                    document.getElementById('login-screen').style.display = 'flex';
+                    if (!autoPassword) showToast(data.message, false);
+                }
+            } catch (e) {
+                document.getElementById('login-screen').style.display = 'flex';
+                if (!autoPassword) showToast("خطأ في الاتصال", false);
+            }
+        }
+
+        // ================= دالة البصمة الفعلية للمدير (مؤمنة) =================
+        async function triggerAdminBiometricLogin() {
+            let isBioEnabled = localStorage.getItem('admin_bio_enabled') === 'true';
+            let token = localStorage.getItem('admin_token');
+            
+            if (isBioEnabled && token && window.Capacitor && window.Capacitor.Plugins.NativeBiometric) {
+                const NativeBiometric = window.Capacitor.Plugins.NativeBiometric;
+                try {
+                    const result = await NativeBiometric.isAvailable();
+                    if (!result.isAvailable) return;
+
+                    await NativeBiometric.verifyIdentity({
+                        reason: "قم بتأكيد هويتك للدخول السريع كمدير",
+                        title: "بوابة القيادة العليا",
+                        subtitle: "استخدم بصمة الإصبع أو الوجه",
+                        description: "دُكّاني"
+                    });
+                    
+                    // إذا نجحت البصمة والتوكن موجود، نفتح اللوحة مباشرة
+                    if(navigator.vibrate) navigator.vibrate(30);
+                    document.getElementById('login-screen').style.display = 'none';
+                    document.getElementById('dashboard-wrapper').style.display = 'flex';
+                    loadDashboard();
+                    startAdminServices();
+                    
+                } catch (e) {
+                    console.log("تم إلغاء البصمة أو فشلت", e);
+                }
+            }
+        }
+
+        async function loadDashboard() {           
+            let token = localStorage.getItem('admin_token');
+            try {
+                let statsRes = await fetch('/api/admin/stats', { headers: {'Authorization': 'Bearer ' + token} });
+                let stats = await statsRes.json();
+                
+                document.getElementById('stats-container').innerHTML = `
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #e0f2fe; color: #3b82f6;"><i class="fas fa-store"></i></div>
+                        <div class="stat-info"><h3>${stats.stores_count || 0}</h3><p>إجمالي البقالات</p></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #dcfce7; color: #0ba360;"><i class="fas fa-check-circle"></i></div>
+                        <div class="stat-info"><h3>${stats.active_stores || 0}</h3><p>البقالات النشطة</p></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #fef3c7; color: #f5af19;"><i class="fas fa-users"></i></div>
+                        <div class="stat-info"><h3>${stats.customers_count || 0}</h3><p>إجمالي الزبائن</p></div>
+                    </div>
+                    <div class="stat-card" style="cursor: pointer; border-color: var(--danger);" onclick="showTopDebts()">
+                        <div class="stat-icon" style="background: rgba(255,0,60,0.2); color: var(--danger);"><i class="fas fa-money-bill-wave"></i></div>
+                        <div class="stat-info"><h3>${stats.total_debt || 0}</h3><p>إجمالي الديون (اضغط للتفاصيل)</p></div>
+                    </div>
+                `;
+
+                let storesRes = await fetch('/api/admin/stores', { headers: {'Authorization': 'Bearer ' + token} });
+                let storesData = await storesRes.json();
+                let html = '';
+                let subsHtml = ''; // 👈 متغير جدول الاشتراكات
+                
+                storesData.stores.forEach(s => {                    
+                    // 👇 القائمة المنسدلة الجديدة (Action Menu) بدلاً من زحمة الأزرار 👇
+                    let actionMenu = `
+                    <div class="action-menu">
+                        <button class="action-btn" onclick="toggleDropdown(event, 'drop-store-${s.id}')"><i class="fas fa-ellipsis-v"></i></button>
+                        <div class="dropdown-content" id="drop-store-${s.id}">
+                            <a onclick="shadowLogin(${s.id})"><i class="fas fa-ghost" style="color: var(--warning);"></i> دخول كظل</a>
+                            <a onclick="openStoreProfile(${s.id}, '${s.name}')"><i class="fas fa-id-card" style="color: var(--primary);"></i> الملف الشامل</a>
+                            ${s.status === 'active' 
+                                ? `<a style="color: var(--danger);" onclick="toggleStore(${s.id}, 'suspended', '${s.name}')"><i class="fas fa-ban"></i> إيقاف البقالة</a>`
+                                : `<a style="color: var(--success);" onclick="toggleStore(${s.id}, 'active', '${s.name}')"><i class="fas fa-check"></i> تفعيل البقالة</a>`
+                            }
+                        </div>
+                    </div>`;
+
+                    let statusBadge = s.status === 'active' 
+                        ? '<span class="badge badge-success"><i class="fas fa-check-circle"></i> نشط</span>' 
+                        : '<span class="badge badge-danger"><i class="fas fa-ban"></i> موقوف</span>';
+
+                    // 👇 بطاقة البقالة الحديثة 👇
+                    html += `
+                    <div class="list-item">
+                        <input type="checkbox" class="cyber-checkbox store-checkbox" value="${s.id}" onchange="updateBulkActionBar()">
+                        <div class="list-item-main" onclick="openStoreProfile(${s.id}, '${escapeHTML(s.name)}')">
+                            <!-- 🛡️ تم حماية اسم البقالة عبر escapeHTML لمنع الأكواد الخبيثة -->
+                            <div class="list-item-title">${escapeHTML(s.name)} ${statusBadge}</div>
+                            <div class="list-item-subtitle">
+                                <span><i class="fas fa-hashtag"></i> ${s.id}</span>
+                                <span dir="ltr"><i class="fas fa-phone"></i> ${s.phone || '-'}</span>
+                            </div>
+                        </div>
+                        <div class="list-item-actions">
+                            ${actionMenu}
+                        </div>
+                    </div>`;
+
+                    // 👇 استخدام شارات الباقات الجديدة 👇
+                    let packageBadge = s.package_type === 'vip' 
+                        ? '<span class="badge badge-warning"><i class="fas fa-crown"></i> VIP</span>' 
+                        : '<span class="badge badge-info"><i class="fas fa-user"></i> مجاني</span>';
+                        
+                    // 👇 القائمة المنسدلة لجدول الاشتراكات 👇
+                    let subsActionMenu = `
+                    <div class="action-menu">
+                        <button class="action-btn" onclick="toggleDropdown(event, 'drop-sub-${s.id}')"><i class="fas fa-ellipsis-v"></i></button>
+                        <div class="dropdown-content" id="drop-sub-${s.id}">
+                            <a onclick="extendTrial(${s.id}, '${s.name}')"><i class="fas fa-calendar-plus" style="color: var(--primary);"></i> تمديد الاشتراك</a>
+                            ${s.package_type !== 'vip' 
+                                ? `<a onclick="upgradeToVIP(${s.id}, '${s.name}')"><i class="fas fa-arrow-up" style="color: var(--warning);"></i> ترقية VIP</a>`
+                                : `<a onclick="downgradeToFree(${s.id}, '${s.name}')"><i class="fas fa-arrow-down" style="color: var(--text-light);"></i> إلغاء VIP</a>`
+                            }
+                        </div>
+                    </div>`;
+
+                    // 👇 بطاقة الاشتراك الحديثة 👇
+                    subsHtml += `
+                    <div class="list-item">
+                        <div class="list-item-main">
+                            <div class="list-item-title">${escapeHTML(s.name)} ${packageBadge}</div>
+                            <div class="list-item-subtitle">
+                                <span><i class="fas fa-hashtag"></i> ${s.id}</span>
+                                <span dir="ltr" style="color: var(--primary);"><i class="fas fa-clock"></i> ${s.trial_ends_at || 'غير محدد'}</span>
+                            </div>
+                        </div>
+                        <div class="list-item-actions">
+                            ${subsActionMenu}
+                        </div>
+                    </div>`;
+                });
+                
+                document.getElementById('stores-list').innerHTML = html;
+                document.getElementById('subs-list').innerHTML = subsHtml; // 👈 تعبئة جدول الاشتراكات
+                
+                // 👇 استدعاء الرسوم البيانية بالبيانات الحقيقية من السيرفر 👇
+                if(stats.growth_data && stats.package_data) {
+                    renderCharts(stats.growth_data, stats.package_data);
+                }
+
+                loadTerminalLogs();
+            } catch (e) {
+                showToast("خطأ في جلب البيانات", false);
+            }
+        }
+
+        // دالة البحث في القوائم الحديثة
+        function searchStores(query) {
+            let filter = query.toLowerCase();
+            let items = document.querySelectorAll('#stores-list .list-item');
+            items.forEach(item => {
+                let text = item.innerText.toLowerCase();
+                item.style.display = text.includes(filter) ? 'flex' : 'none';
+            });
+        }
+
+        // ================= دوال الإجراءات الجماعية =================
+        function toggleSelectAll(source) {
+            let checkboxes = document.querySelectorAll('.store-checkbox');
+            checkboxes.forEach(cb => {
+                // تحديد فقط العناصر الظاهرة (استبدلنا tr بـ .list-item ليتوافق مع التصميم الجديد)
+                if(cb.closest('.list-item').style.display !== 'none') {
+                    cb.checked = source.checked;
+                }
+            });
+            updateBulkActionBar();
+        }
+
+        function updateBulkActionBar() {
+            let selected = document.querySelectorAll('.store-checkbox:checked').length;
+            let bar = document.getElementById('bulk-action-bar');
+            let countSpan = document.getElementById('bulk-count');
+            
+            countSpan.innerText = selected;
+            if (selected > 0) {
+                bar.classList.add('active');
+            } else {
+                bar.classList.remove('active');
+                document.getElementById('selectAll').checked = false;
+            }
+        }
+
+        async function bulkAction(actionType) {
+            let selectedIds = Array.from(document.querySelectorAll('.store-checkbox:checked')).map(cb => cb.value);
+            if(selectedIds.length === 0) return;
+
+            if(actionType === 'broadcast') {
+                // توجيه المدير لشاشة الإذاعة مع رسالة توضيحية
+                switchTab('broadcast', document.querySelector('.nav-link[onclick*="broadcast"]'));
+                document.getElementById('broadcast-msg').value = `رسالة مخصصة لـ ${selectedIds.length} بقالة تم تحديدها...`;
+                showToast("تم تحويلك لشاشة الإذاعة لإرسال الرسالة", true);
+            } 
+            else if(actionType === 'vip') {
+                let confirm = await smartDialog({
+                    type: 'confirm', title: 'ترقية جماعية 👑',
+                    message: `هل أنت متأكد من ترقية (${selectedIds.length}) بقالة إلى باقة VIP دفعة واحدة؟`,
+                    icon: 'fa-crown', color: '#f5af19'
+                });
+                if(confirm) {
+                    showToast("⏳ جاري الترقية الجماعية...");
+                    let token = localStorage.getItem('admin_token');
+                    try {
+                        let res = await fetch('/api/admin/bulk_update', {
+                            method: 'POST', 
+                            headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
+                            body: JSON.stringify({ action: 'vip', store_ids: selectedIds.map(Number) })
+                        });
+                        let data = await res.json();
+                        if(data.status === 'success') {
+                            showToast(`✅ تم ترقية ${selectedIds.length} بقالات بنجاح!`);
+                            document.querySelectorAll('.store-checkbox').forEach(cb => cb.checked = false);
+                            updateBulkActionBar();
+                            loadDashboard();
+                        } else {
+                            showToast("❌ فشل التحديث الجماعي", false);
+                        }
+                    } catch(e) {
+                        showToast("❌ خطأ في الاتصال", false);
+                    }
+                }
+            }
+        }
+
+        // ================= دوال القيادة العليا الجديدة =================
+        async function loadTerminalLogs() {
+            let token = localStorage.getItem('admin_token');
+            try {
+                let res = await fetch('/api/admin/logs', { headers: {'Authorization': 'Bearer ' + token} });
+                let data = await res.json();
+                if(data.status === 'success') {
+                    let html = '';
+                    data.logs.forEach(log => {
+                        // 🛡️ استخدام escapeHTML لحماية الـ Terminal من الأكواد الخبيثة
+                        html += `<div class="terminal-line"><span class="terminal-time">[${escapeHTML(log.time)}]</span> <span style="color: #fff;">${escapeHTML(log.action)}:</span> ${escapeHTML(log.details)}</div>`;
+                    });
+                    document.getElementById('terminal-logs').innerHTML = html || '<div style="color:#888;">[System] No logs found.</div>';
+                }
+            } catch(e) {}
+        }
+
+        // ================= الاتصال الحي بالرادار (WebSockets) =================
+        function connectAdminRadar() {
+            let protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+            let token = localStorage.getItem('admin_token' );
+            let ws = new WebSocket(protocol + window.location.host + '/ws/admin_logs?token=' + token);
+            
+            ws.onmessage = function(event) {
+                let msg;
+                try {
+                    msg = JSON.parse(event.data);
+                } catch (e) {
+                    return; // تجاهل الرسائل النصية البسيطة مثل pong لمنع الكراش
+                }
+                if(msg.type === 'new_log') {
+                    let log = msg.data;
+                    // حماية النصوص عبر دالة escapeHTML
+                    let newLogHtml = `<div class="terminal-line" style="animation: cyberFadeIn 0.5s;"><span class="terminal-time">[${escapeHTML(log.time)}]</span> <span style="color: #fff;">${escapeHTML(log.action)}:</span> ${escapeHTML(log.details)}</div>`;
+                    let terminal = document.getElementById('terminal-logs');
+                    
+                    if(terminal.innerHTML.includes('No logs found')) terminal.innerHTML = '';
+                    terminal.insertAdjacentHTML('afterbegin', newLogHtml);
+                    
+                    // 👇 السحر الجديد: جعل محادثات الدعم الفني "حية" 👇
+                    if(log.action.includes('رسالة دعم فني')) {
+                        // 1. تشغيل صوت خفيف للإشعار
+                        try { new Audio('https://www.soundjay.com/buttons/sounds/button-09.mp3' ).play(); } catch(e){}
+                        
+                        // 2. تحديث قائمة المحادثات (لزيادة الشارة الحمراء للرسائل غير المقروءة)
+                        if(typeof loadAdminChats === 'function') loadAdminChats();
+                        
+                        // 3. تحديث الرسائل حياً إذا كانت نافذة البقالة مفتوحة حالياً
+                        let chatModal = document.getElementById('adminChatModal');
+                        if(chatModal && chatModal.style.display === 'flex') {
+                            let currentStoreId = document.getElementById('admin-chat-store-id').value;
+                            let currentStoreName = document.getElementById('admin-chat-store-name').innerText.replace('🏪 ', '').trim();
+                            
+                            // نتحقق إذا كانت الرسالة القادمة تخص البقالة التي نكلمها
+                            if(log.details.includes(currentStoreName)) {
+                                openAdminChat(currentStoreId, currentStoreName); 
+                            }
+                        }
+                    }
+                }
+            };
+            
+            // 👇 إضافة "نبض القلب" لمنع السيرفر من قطع الاتصال 👇
+            let heartbeat = setInterval(() => {
+                if (ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({ type: 'ping' }));
+                }
+            }, 30000); // إرسال نبضة كل 30 ثانية
+
+            ws.onclose = function() {
+                clearInterval(heartbeat); // إيقاف النبض عند الانقطاع
+                setTimeout(connectAdminRadar, 3000); // إعادة الاتصال التلقائي لو انقطع النت
+            };
+        }
+        // تشغيل الرادار فوراً عند فتح الصفحة
+        connectAdminRadar();
+
+        async function shadowLogin(storeId) {                                     
+            let confirm = await smartDialog({
+                type: 'confirm', title: 'وضع الظل 👻',
+                message: 'هل تريد تسجيل الدخول كصاحب هذه البقالة بكامل الصلاحيات؟',
+                icon: 'fa-ghost', color: '#f5af19'
+            });
+            if(!confirm) return;
+            
+            showToast("⏳ جاري تفعيل وضع الظل...");
+            let token = localStorage.getItem('admin_token');
+            let res = await fetch('/api/admin/shadow_login', {
+                method: 'POST', headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
+                body: JSON.stringify({store_id: storeId})
+            });
+            let data = await res.json();
+            if(data.status === 'success') {
+                localStorage.setItem('store_token', data.shadow_token);
+                
+                // استخدام telegram_id الحقيقي لضمان الصلاحيات الكاملة
+                let realId = data.telegram_id || storeId; 
+                
+                // فتح نافذة جديدة مع تمرير shadow_mode
+                window.open('/manage?store_id=' + realId + '&shadow_mode=true', '_blank'); 
+                showToast("✅ تم الدخول بنجاح!");
+            } else {
+                showToast("❌ فشل الدخول", false);
+            }
+        }
+
+        async function extendTrial(storeId, storeName) {
+            let days = await smartDialog({
+                type: 'prompt', title: 'تمديد الفترة التجريبية ⏱️',
+                message: `كم يوماً تريد إضافته لبقالة (${storeName})؟`,
+                icon: 'fa-calendar-plus', color: '#3b82f6', placeholder: 'مثال: 30'
+            });
+            if(!days || isNaN(days)) return;
+            
+            showToast("⏳ جاري التمديد...");
+            let token = localStorage.getItem('admin_token');
+            let res = await fetch('/api/admin/extend_trial', {
+                method: 'POST', headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
+                body: JSON.stringify({store_id: storeId, days: parseInt(days)})
+            });
+            let data = await res.json();
+            if(data.status === 'success') {
+                showToast(`✅ تم التمديد بنجاح حتى ${data.new_date}`);
+                loadDashboard();
+            }
+        }
+
+        async function upgradeToVIP(storeId, storeName) {
+            let confirm = await smartDialog({
+                type: 'confirm', title: 'ترقية إلى VIP 👑',
+                message: `هل أنت متأكد من ترقية بقالة (${storeName}) إلى باقة VIP؟`,
+                icon: 'fa-crown', color: '#f5af19'
+            });
+            if(!confirm) return;
+            
+            showToast("⏳ جاري الترقية...");
+            let token = localStorage.getItem('admin_token');
+            let res = await fetch('/api/admin/update_package', {
+                method: 'POST', headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
+                body: JSON.stringify({store_id: storeId, package_type: 'vip'})
+            });
+            let data = await res.json();
+            if(data.status === 'success') {
+                showToast("✅ تم ترقية البقالة إلى VIP بنجاح!");
+                loadDashboard();
+            }
+        }
+
+        async function downgradeToFree(storeId, storeName) {
+            let confirm = await smartDialog({
+                type: 'confirm', title: 'إلغاء VIP ⬇️',
+                message: `هل أنت متأكد من إعادة بقالة (${storeName}) إلى الباقة المجانية؟`,
+                icon: 'fa-arrow-down', color: '#94a3b8'
+            });
+            if(!confirm) return;
+            
+            showToast("⏳ جاري التحديث...");
+            let token = localStorage.getItem('admin_token');
+            let res = await fetch('/api/admin/update_package', {
+                method: 'POST', headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
+                body: JSON.stringify({store_id: storeId, package_type: 'free'})
+            });
+            let data = await res.json();
+            if(data.status === 'success') {
+                showToast("✅ تم إعادة البقالة للباقة المجانية.");
+                loadDashboard();
+            }
+        }
+
+        // ================= دالة تحديث اسم البقالة =================
+        async function updateStoreName(storeId, currentName) {
+            let newName = await smartDialog({
+                type: 'prompt', 
+                title: 'تعديل اسم البقالة ✏️',
+                message: `أدخل الاسم الجديد لبقالة (${currentName}):`,
+                icon: 'fa-edit', 
+                color: '#a855f7', 
+                placeholder: currentName
+            });
+            
+            // إذا ضغط إلغاء أو ترك الحقل فارغاً أو لم يغير الاسم
+            if (!newName || newName.trim() === '' || newName === currentName) return;
+            
+            showToast("⏳ جاري التحديث...");
+            let token = localStorage.getItem('admin_token');
+            try {
+                let res = await fetch('/api/admin/update_store', {
+                    method: 'POST', 
+                    headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
+                    body: JSON.stringify({ store_id: storeId, new_name: newName.trim() })
+                });
+                let data = await res.json();
+                
+                if (data.status === 'success') {
+                    showToast("✅ تم تحديث اسم البقالة بنجاح!");
+                    // إغلاق نافذة الملف الشامل الحالية
+                    document.getElementById('smart-dialog-overlay').style.display = 'none';
+                    // تحديث الجداول
+                    loadDashboard();
+                } else {
+                    showToast("❌ فشل تحديث الاسم", false);
+                }
+            } catch (e) {
+                showToast("❌ حدث خطأ في الاتصال بالسيرفر", false);
+            }
+        }
+
+                    // 👇 الملف الشامل الحقيقي للبقالة (مع أزرار التحكم) 👇
+        async function openStoreProfile(storeId, storeName) {
+            showToast("⏳ جاري جلب الملف الشامل...");
+            let token = localStorage.getItem('admin_token');
+            try {
+                let res = await fetch(`/api/admin/store_profile?store_id=${storeId}`, { headers: {'Authorization': 'Bearer ' + token} });
+                let data = await res.json();
+                if(data.status === 'success') {
+                    let profileHtml = `
+                        <div style="text-align: right; font-size: 14px; line-height: 1.8;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                                <div style="background: rgba(0,243,255,0.1); padding: 10px; border-radius: 10px; border: 1px solid var(--glass-border); text-align: center;">
+                                    <i class="fas fa-users" style="color: var(--primary); font-size: 20px; margin-bottom: 5px; display: block;"></i> 
+                                    <span style="color: var(--text-light);">الزبائن</span>  
+<b style="font-size: 18px; color: white;">${data.customers}</b>
+                                </div>
+                                <div style="background: rgba(255,71,87,0.1); padding: 10px; border-radius: 10px; border: 1px solid rgba(255,71,87,0.3); text-align: center;">
+                                    <i class="fas fa-money-bill-wave" style="color: var(--danger); font-size: 20px; margin-bottom: 5px; display: block;"></i> 
+                                    <span style="color: var(--text-light);">الديون</span>  
+<b style="font-size: 18px; color: white;">${data.debt}</b>
+                                </div>
+                                <div style="background: rgba(245,175,25,0.1); padding: 10px; border-radius: 10px; border: 1px solid rgba(245,175,25,0.3); text-align: center;">
+                                    <i class="fas fa-box" style="color: #f5af19; font-size: 20px; margin-bottom: 5px; display: block;"></i> 
+                                    <span style="color: var(--text-light);">المنتجات</span>  
+<b style="font-size: 18px; color: white;">${data.products}</b>
+                                </div>
+                                <div style="background: rgba(59,130,246,0.1); padding: 10px; border-radius: 10px; border: 1px solid rgba(59,130,246,0.3); text-align: center;">
+                                    <i class="fas fa-shopping-cart" style="color: #3b82f6; font-size: 20px; margin-bottom: 5px; display: block;"></i> 
+                                    <span style="color: var(--text-light);">الطلبات</span>  
+<b style="font-size: 18px; color: white;">${data.orders}</b>
+                                </div>
+                            </div>
+                            <p>📅 تاريخ الانضمام: <b style="color: white;">${data.created_at}</b></p>
+                            <p>📱 الهاتف: <b dir="ltr" style="color: white;">${data.phone}</b></p>
+                            <p>👑 الباقة: <b style="color: ${data.package_type === 'vip' ? '#f5af19' : '#3b82f6'};">${data.package_type === 'vip' ? 'VIP' : 'مجانية'}</b></p>
+                            
+                            <hr style="border-color: rgba(255,255,255,0.1); margin: 15px 0;">
+                            
+                            <!-- 👇 أزرار التحكم المباشر من داخل الملف الشامل 👇 -->
+                            <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
+                                <button class="btn" style="padding: 8px 15px; font-size: 13px; background: #1e293b; color: #00f3ff; border: 1px solid #00f3ff;" onclick="shadowLogin(${storeId})"><i class="fas fa-ghost"></i> دخول كبقال (ظل)</button>
+                                <button class="btn" style="padding: 8px 15px; font-size: 13px; background: #1e293b; color: #a855f7; border: 1px solid #a855f7;" onclick="updateStoreName(${storeId}, '${data.name}')"><i class="fas fa-edit"></i> تعديل الاسم</button>
+
+                                ${data.package_type === 'vip' 
+                                    ? `<button class="btn" style="padding: 8px 15px; font-size: 13px; background: #1e293b; color: #94a3b8; border: 1px solid #94a3b8;" onclick="downgradeToFree(${storeId}, '${data.name}')"><i class="fas fa-arrow-down"></i> تحويل لمجاني</button>`
+                                    : `<button class="btn" style="padding: 8px 15px; font-size: 13px; background: #1e293b; color: #f5af19; border: 1px solid #f5af19;" onclick="upgradeToVIP(${storeId}, '${data.name}')"><i class="fas fa-arrow-up"></i> ترقية VIP</button>`
+                                }
+                                
+                                <button class="btn" style="padding: 8px 15px; font-size: 13px; background: #1e293b; color: #3b82f6; border: 1px solid #3b82f6;" onclick="extendTrial(${storeId}, '${data.name}')"><i class="fas fa-calendar-plus"></i> تمديد الاشتراك</button>
+                                
+                                <!-- 👇 الزر الجديد للتحكم بخدمات الكروت والشحن 👇 -->
+                                <button class="btn" style="padding: 8px 15px; font-size: 13px; background: #1e293b; color: #8b5cf6; border: 1px solid #8b5cf6;" onclick="openTelecomPerms(${storeId}, '${data.name}')"><i class="fas fa-sim-card"></i> صلاحيات الخدمات</button>
+
+                                ${data.store_status === 'active'
+                                    ? `<button class="btn" style="padding: 8px 15px; font-size: 13px; background: #1e293b; color: #ff4757; border: 1px solid #ff4757;" onclick="toggleStore(${storeId}, 'suspended', '${data.name}')"><i class="fas fa-ban"></i> إيقاف البقالة</button>`
+                                    : `<button class="btn" style="padding: 8px 15px; font-size: 13px; background: #1e293b; color: #0ba360; border: 1px solid #0ba360;" onclick="toggleStore(${storeId}, 'active', '${data.name}')"><i class="fas fa-check"></i> تفعيل البقالة</button>`
+                                }
+                            </div>
+                        </div>
+                    `;
+                    
+                    smartDialog({
+                        type: 'alert', 
+                        title: `الملف الشامل: ${data.name}`,
+                        message: profileHtml,
+                        icon: 'fa-id-card', 
+                        color: '#00f3ff'
+                    });
+                }
+            } catch(e) {
+                showToast("❌ فشل جلب البيانات", false);
+            }
+        }
+
+        async function openTelecomPerms(storeId, storeName) {
+            document.getElementById('smart-dialog-overlay').style.display = 'none'; // إغلاق الملف الشامل مؤقتاً
+            showToast("⏳ جاري جلب الصلاحيات...");
+            let token = localStorage.getItem('admin_token');
+            try {
+                let res = await fetch(`/api/admin/store_telecom_perms?store_id=${storeId}`, { headers: {'Authorization': 'Bearer ' + token} });
+                let data = await res.json();
+                if(data.status === 'success') {
+                    let perms = data.permissions || {"ecards": false, "instant_recharge": false};
+                    
+                    let html = `
+                        <div style="text-align: right; margin-top: 15px;">
+                            <label style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 10px; margin-bottom: 10px; border: 1px solid var(--border-color); cursor: pointer;">
+                                <span style="color: white; font-weight: bold;"><i class="fas fa-sim-card" style="color: var(--primary);"></i> بيع الكروت الإلكترونية</span>
+                                <input type="checkbox" id="perm-ecards" class="cyber-checkbox" ${perms.ecards ? 'checked' : ''}>
+                            </label>
+                            <label style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 10px; margin-bottom: 10px; border: 1px solid var(--border-color); cursor: pointer;">
+                                <span style="color: white; font-weight: bold;"><i class="fas fa-bolt" style="color: #f5af19;"></i> الشحن الفوري والباقات</span>
+                                <input type="checkbox" id="perm-recharge" class="cyber-checkbox" ${perms.instant_recharge ? 'checked' : ''}>
+                            </label>
+                            <p style="font-size: 12px; color: var(--text-light); text-align: center; margin-top: 10px;">عند تفعيل الخدمة، سيتمكن صاحب البقالة وزبائنه من استخدام الجسر السري مع "الشهاب برو".</p>
+                        </div>
+                    `;
+                    
+                    let confirm = await smartDialog({
+                        type: 'confirm', title: `صلاحيات الخدمات: ${storeName}`,
+                        message: html,
+                        icon: 'fa-cogs', color: '#8b5cf6'
+                    });
+                    
+                    if (confirm) {
+                        let ecards = document.getElementById('perm-ecards').checked;
+                        let recharge = document.getElementById('perm-recharge').checked;
+                        
+                        showToast("⏳ جاري الحفظ...");
+                        await fetch('/api/admin/update_telecom_perms', {
+                            method: 'POST', headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
+                            body: JSON.stringify({store_id: storeId, permissions: {ecards: ecards, instant_recharge: recharge}})
+                        });
+                        showToast("✅ تم تحديث الصلاحيات بنجاح!");
+                    }
+                }
+            } catch(e) {
+                showToast("❌ خطأ في الاتصال", false);
+            }
+        }
+
+        async function showTopDebts() {
+            let token = localStorage.getItem('admin_token');
+            try {
+                let res = await fetch('/api/admin/top_debts', { headers: {'Authorization': 'Bearer ' + token} });
+                let data = await res.json();
+                
+                if(data.status === 'success') {
+                    let msgHtml = '<div style="text-align: right; margin-top: 10px;">';
+                    if(data.top_debts.length === 0) {
+                        msgHtml += '<p style="text-align:center; color:var(--success);">لا توجد ديون مسجلة في النظام! 🎉</p>';
+                    } else {
+                        data.top_debts.forEach((store, index) => {
+                            msgHtml += `<div style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between;">
+                                <span>${index + 1}. ${escapeHTML(store.name)}</span>
+                                <span style="color: var(--danger); font-weight: bold;">${store.debt} ريال</span>
+                            </div>`;
+                        });
+                    }
+                    msgHtml += '</div>';
+                    
+                    smartDialog({
+                        type: 'alert', title: 'أعلى 5 بقالات مديونية 📉',
+                        message: msgHtml,
+                        icon: 'fa-chart-line', color: '#ff003c'
+                    });
+                }
+            } catch(e) {
+                showToast("❌ فشل جلب البيانات", false);
+            }
+        }
+
+        // دالة فلترة سجل العمليات
+        function filterTerminal(keyword) {
+            let lines = document.querySelectorAll('.terminal-line');
+            let keywords = keyword.split('|');
+            
+            lines.forEach(line => {
+                if (keyword === 'all') {
+                    line.style.display = 'block';
+                } else {
+                    let text = line.innerText;
+                    let match = keywords.some(k => text.includes(k));
+                    line.style.display = match ? 'block' : 'none';
+                }
+            });
+        }
+
+        // ================= دوال الكتالوج وسلة المهملات والصحة =================
+        async function loadServerHealth() {
+            let token = localStorage.getItem('admin_token');
+            try {
+                let res = await fetch('/api/admin/health', { headers: {'Authorization': 'Bearer ' + token} });
+                let data = await res.json();
+                if(data.status === 'success') {
+                    document.getElementById('health-container').innerHTML = `
+                        <div class="stat-card" style="background: rgba(11, 163, 96, 0.1); border-color: var(--primary);">
+                            <div class="stat-icon" style="color: var(--primary);"><i class="fas fa-microchip"></i></div>
+                            <div class="stat-info"><h3>${data.cpu}%</h3><p>استهلاك المعالج</p></div>
+                        </div>
+                        <div class="stat-card" style="background: rgba(59, 130, 246, 0.1); border-color: #3b82f6;">
+                            <div class="stat-icon" style="color: #3b82f6;"><i class="fas fa-memory"></i></div>
+                            <div class="stat-info"><h3>${data.ram}%</h3><p>استهلاك الذاكرة</p></div>
+                        </div>
+                        <div class="stat-card" style="background: rgba(245, 175, 25, 0.1); border-color: #f5af19;">
+                            <div class="stat-icon" style="color: #f5af19;"><i class="fas fa-database"></i></div>
+                            <div class="stat-info"><h3>${data.db_ping}ms</h3><p>سرعة قاعدة البيانات</p></div>
+                        </div>
+                    `;
+                }
+            } catch(e) {}
+        }
+
+        async function loadRecycleBin() {
+            let table = document.getElementById('recycle-table').value;
+            let token = localStorage.getItem('admin_token');
+            document.getElementById('recycle-list').innerHTML = '<tr><td colspan="3" style="text-align:center;">جاري التحميل...</td></tr>';
+            try {
+                let res = await fetch(`/api/admin/recycle_bin?table=${table}`, { headers: {'Authorization': 'Bearer ' + token} });
+                let data = await res.json();
+                let html = '';
+                data.items.forEach(item => {
+                    html += `<tr>
+                        <td>#${item.id}</td>
+                        <td style="font-weight:bold;">${escapeHTML(item.name)}</td>
+                        <td><button class="btn" style="padding: 5px 10px; font-size: 12px; background: var(--success);" onclick="recoverItem('${table}', ${item.id})"><i class="fas fa-undo"></i> استعادة</button></td>
+                    </tr>`;
+                });
+                // 👇 استخدام تصميم الفراغ الإبداعي 👇
+                document.getElementById('recycle-list').innerHTML = html || `<tr><td colspan="3">
+                    <div class="empty-state">
+                        <i class="fas fa-box-open"></i>
+                        <h4>السلة فارغة</h4>
+                        <p>النظافة من الإيمان 🧹 لا توجد أي عناصر محذوفة حالياً في هذا القسم.</p>
+                    </div>
+                </td></tr>`;
+            } catch(e) {}
+        }
+
+        async function recoverItem(table, id) {
+            let token = localStorage.getItem('admin_token');
+            showToast("⏳ جاري الاستعادة...");
+            let res = await fetch('/api/admin/recover', {
+                method: 'POST', headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
+                body: JSON.stringify({table: table, id: id})
+            });
+            let data = await res.json();
+            if(data.status === 'success') {
+                showToast("✅ تمت الاستعادة بنجاح!");
+                loadRecycleBin();
+                loadDashboard();
+            }
+        }
+
+        async function loadChurnRadar() {
+            let token = localStorage.getItem('admin_token');
+            document.getElementById('churn-radar-list').innerHTML = '<tr><td colspan="6" style="text-align:center; color:#aaa;">جاري مسح النظام... 📡</td></tr>';
+            try {
+                let res = await fetch('/api/admin/churn_radar', { headers: {'Authorization': 'Bearer ' + token} });
+                let data = await res.json();
+                if(data.status === 'success') {
+                    let html = '';
+                    data.radar_data.forEach(item => {
+                        // تلوين السطر بالخفيف إذا كان خاملاً
+                        let rowStyle = item.status.includes('خامل') ? 'background: rgba(255, 71, 87, 0.05);' : '';
+                        let phoneAction = item.phone !== "غير متوفر" ? `<a href="https://wa.me/${item.phone}" target="_blank" class="btn" style="padding: 5px 10px; font-size: 11px; background: #25D366; color: white; border: none; box-shadow: none;"><i class="fab fa-whatsapp"></i> تواصل</a>` : '-';
+                        
+                        html += `<tr style="${rowStyle}">
+                            <td style="font-weight:bold;">${escapeHTML(item.name)}</td>
+                            <td>${item.package_type === 'vip' ? '<span style="color:#f5af19;">VIP 👑</span>' : 'مجاني'}</td>
+                            <td dir="ltr">${item.days_inactive} ${item.days_inactive === 'لم يستخدم النظام' ? '' : 'أيام'}</td>
+                            <td><b style="color: ${item.recent_orders == 0 ? '#ff4757' : '#0ba360'};">${item.recent_orders}</b></td>
+                            <td style="font-weight:bold;">${item.status}</td>
+                            <td>${phoneAction}</td>
+                        </tr>`;
+                    } );
+                    document.getElementById('churn-radar-list').innerHTML = html || '<tr><td colspan="6" style="text-align:center;">لا توجد بيانات حالياً.</td></tr>';
+                }
+            } catch(e) {
+                document.getElementById('churn-radar-list').innerHTML = '<tr><td colspan="6" style="text-align:center; color:red;">❌ خطأ في الاتصال</td></tr>';
+            }
+        }
+
+        async function loadBillingStats() {
+            let token = localStorage.getItem('admin_token');
+            try {
+                let res = await fetch('/api/admin/billing_stats', { headers: {'Authorization': 'Bearer ' + token} });
+                let data = await res.json();
+                if(data.status === 'success') {
+                    document.getElementById('bill-month-rev').innerText = data.monthly_revenue + ' ريال';
+                    document.getElementById('bill-total-rev').innerText = data.total_revenue + ' ريال';
+                    
+                    let storeHtml = '<option value="">-- اختر البقالة --</option>';
+                    data.stores.forEach(s => {
+                        let pkg = s.package === 'vip' ? '👑' : '🆓';
+                        storeHtml += `<option value="${s.id}">${s.name} ${pkg}</option>`;
+                    });
+                    document.getElementById('bill-store-select').innerHTML = storeHtml;
+                    
+                    let html = '';
+                    data.payments.forEach(p => {
+                        html += `<tr>
+                            <td style="font-weight:bold;">${escapeHTML(p.store_name)}</td>
+                            <td style="color:#0ba360; font-weight:bold;">${p.amount} ريال</td>
+                            <td dir="ltr">${p.date}</td>
+                            <td>${p.note || '-'}</td>
+                        </tr>`;
+                    });
+                    document.getElementById('billing-list').innerHTML = html || '<tr><td colspan="4" style="text-align:center;">لا توجد مدفوعات مسجلة.</td></tr>';
+                }
+            } catch(e) {
+                document.getElementById('billing-list').innerHTML = '<tr><td colspan="4" style="text-align:center; color:red;">❌ خطأ في الاتصال</td></tr>';
+            }
+        }
+
+        async function submitSubscriptionPayment() {
+            let storeId = document.getElementById('bill-store-select').value;
+            let amount = document.getElementById('bill-amount').value;
+            let note = document.getElementById('bill-note').value;
+            
+            if(!storeId || !amount || amount <= 0) return showToast("❌ يرجى اختيار البقالة وإدخال مبلغ صحيح", false);
+            
+            showToast("⏳ جاري التسجيل...");
+            let token = localStorage.getItem('admin_token');
+            try {
+                let res = await fetch('/api/admin/add_subscription_payment', {
+                    method: 'POST', headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
+                    body: JSON.stringify({store_id: storeId, amount: amount, note: note})
+                });
+                let data = await res.json();
+                if(data.status === 'success') {
+                    showToast(data.message);
+                    document.getElementById('bill-amount').value = '';
+                    document.getElementById('bill-note').value = '';
+                    loadBillingStats(); // تحديث القائمة والأرقام
+                } else {
+                    showToast(data.message, false);
+                }
+            } catch(e) {
+                showToast("❌ خطأ في الاتصال", false);
+            }
+        }
+
+        async function loadCatalog() {
+            let token = localStorage.getItem('admin_token');
+            try {
+                let res = await fetch('/api/admin/catalog', { headers: {'Authorization': 'Bearer ' + token} });
+                let data = await res.json();
+                let html = '';
+                data.items.forEach(item => {                                  
+                    html += `<tr>
+                        <td>#${item.id}</td>
+                        <td style="font-weight:bold;">${escapeHTML(item.name)}</td>
+                        <td>${escapeHTML(item.category)}</td>
+                        <td><span class="badge badge-success">متاح 🌍</span></td>
+                    </tr>`;
+                });
+                // 👇 استخدام تصميم الفراغ الإبداعي 👇
+                document.getElementById('catalog-list').innerHTML = html || `<tr><td colspan="4">
+                    <div class="empty-state">
+                        <i class="fas fa-folder-open"></i>
+                        <h4>الكتالوج فارغ</h4>
+                        <p>لم تقم بإضافة أي منتجات قياسية حتى الآن. أضف منتجات لتظهر تلقائياً للبقالات الجديدة.</p>
+                    </div>
+                </td></tr>`;
+            } catch(e) {}
+        }
+
+        async function addCatalogItem() {
+            let name = document.getElementById('new-cat-name').value;
+            let category = document.getElementById('new-cat-category').value;
+            if(!name) return showToast("❌ يرجى كتابة اسم المنتج", false);
+            
+            let token = localStorage.getItem('admin_token');
+            showToast("⏳ جاري الإضافة...");
+            let res = await fetch('/api/admin/catalog/add', {
+                method: 'POST', headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
+                body: JSON.stringify({name: name, category: category})
+            });
+            let data = await res.json();
+            if(data.status === 'success') {
+                showToast("✅ تم إضافة المنتج للكتالوج!");
+                document.getElementById('new-cat-name').value = '';
+                document.getElementById('new-cat-category').value = '';
+                loadCatalog();
+            }
+        }
+
+        // ================= محرك النوافذ الذكية =================
+        function smartDialog(options) {
+            return new Promise((resolve) => {
+                const overlay = document.getElementById('smart-dialog-overlay');
+                const titleEl = document.getElementById('sd-title');
+                const msgEl = document.getElementById('sd-msg');
+                const inputEl = document.getElementById('sd-input');
+                const iconEl = document.getElementById('sd-icon');
+                const confirmBtn = document.getElementById('sd-confirm');
+                const cancelBtn = document.getElementById('sd-cancel');
+
+                titleEl.innerText = options.title || 'تنبيه';
+                msgEl.innerHTML = options.message || '';
+                iconEl.innerHTML = `<i class="fas ${options.icon || 'fa-info-circle'}"></i>`;
+                iconEl.style.color = options.color || '#0ba360';
+
+                if (options.type === 'prompt') {
+                    inputEl.style.display = 'block';
+                    inputEl.value = '';
+                    inputEl.placeholder = options.placeholder || '';
+                    setTimeout(() => inputEl.focus(), 100);
+                } else {
+                    inputEl.style.display = 'none';
+                }
+
+                overlay.style.display = 'flex';
+
+                const cleanup = () => { 
+                    overlay.style.display = 'none'; 
+                    confirmBtn.onclick = null; 
+                    cancelBtn.onclick = null; 
+                };
+
+                confirmBtn.onclick = () => {
+                    cleanup();
+                    if (options.type === 'prompt') resolve(inputEl.value);
+                    else resolve(true);
+                };
+
+                cancelBtn.onclick = () => {
+                    cleanup();
+                    resolve(null);
+                };
+            });
+        }
+
+        // ================= الإيقاف والتفعيل الذكي =================
+        async function toggleStore(id, status, storeName) {
+            if (status === 'suspended') {
+                let reason = await smartDialog({
+                    type: 'prompt', title: 'إيقاف بقالة 🔴',
+                    message: `أدخل سبب إيقاف بقالة (${storeName}):  
+<small style="color:#ff4757;">(سيظهر هذا السبب لصاحب البقالة وللزبائن)</small>`,
+                    icon: 'fa-ban', color: '#ff4757', placeholder: 'مثال: انتهاء الاشتراك...'
+                });
+                
+                if (!reason) return; // تم الإلغاء
+                executeToggle(id, status, reason);
+            } else {
+                let confirm = await smartDialog({
+                    type: 'confirm', title: 'تفعيل بقالة 🟢',
+                    message: `هل أنت متأكد من إعادة تفعيل بقالة (${storeName})؟`,
+                    icon: 'fa-check-circle', color: '#0ba360'
+                });
+                
+                if (!confirm) return;
+                executeToggle(id, status, "");
+            }
+        }
+
+        async function executeToggle(id, status, reason) {
+            showToast("⏳ جاري التحديث...");
+            let token = localStorage.getItem('admin_token');
+            await fetch('/api/admin/store/toggle', {
+                method: 'POST', headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
+                body: JSON.stringify({store_id: id, status: status, suspend_reason: reason})
+            });
+            showToast("✅ تم تحديث حالة البقالة بنجاح!");
+            loadDashboard();
+        }
+
+        async function sendBroadcast() {
+            let msg = document.getElementById('broadcast-msg').value;
+            let target = document.getElementById('broadcast-target').value;
+            if(!msg) return showToast("اكتب الرسالة أولاً", false);
+            
+            showToast("⏳ جاري الإرسال...");
+            let token = localStorage.getItem('admin_token');
+            try {
+                let res = await fetch('/api/admin/broadcast', {
+                    method: 'POST', headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
+                    body: JSON.stringify({message: msg, target: target})
+                });
+                let data = await res.json();
+                if(data.status === 'success') {
+                    showToast(`✅ تم إرسال الإشعار بنجاح إلى ${data.sent_count} بقالة!`);
+                    document.getElementById('broadcast-msg').value = '';
+                }
+            } catch(e) {
+                showToast("❌ حدث خطأ أثناء الإرسال", false);
+            }
+        }
+      
+        // ================= أدوات القيادة العليا (God Mode) =================
+        
+        let isAdminBioEnabled = localStorage.getItem('admin_bio_enabled') === 'true';
+        
+        // تطبيق لون أيقونة البصمة عند فتح الصفحة
+        document.addEventListener('DOMContentLoaded', () => {
+            let bioIcon = document.getElementById('admin-bio-icon');
+            if(bioIcon && isAdminBioEnabled) bioIcon.style.color = '#0ba360';
+        });
+
+        function toggleAdminBiometrics() {
+            if (!window.Capacitor || !window.Capacitor.Plugins.NativeBiometric) {
+                return showToast("هذه الميزة تعمل فقط داخل تطبيق الهاتف (APK)", false);
+            }
+            isAdminBioEnabled = !isAdminBioEnabled;
+            localStorage.setItem('admin_bio_enabled', isAdminBioEnabled);
+            document.getElementById('admin-bio-icon').style.color = isAdminBioEnabled ? '#0ba360' : '#94a3b8';
+            showToast(isAdminBioEnabled ? "تم تفعيل الدخول بالبصمة للمدير 🛡️" : "تم إيقاف البصمة");
+        }
+
+        async function downloadBackup() {
+            let confirm = await smartDialog({
+                type: 'confirm', title: 'نسخة احتياطية 💾',
+                message: 'هل تريد تحميل نسخة كاملة من قاعدة البيانات (Excel/CSV)؟',
+                icon: 'fa-database', color: '#3b82f6'
+            });
+            if(confirm) {
+                showToast("⏳ جاري تجهيز النسخة الاحتياطية...");
+                let token = localStorage.getItem('admin_token');
+                try {
+                    let res = await fetch('/api/admin/backup', { headers: {'Authorization': 'Bearer ' + token} });
+                    let blob = await res.blob();
+                    let url = window.URL.createObjectURL(blob);
+                    let a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'dukkani_backup.csv';
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    showToast("✅ تم تحميل النسخة الاحتياطية بنجاح!");
+                } catch(e) {
+                    showToast("❌ فشل تحميل النسخة الاحتياطية", false);
+                }
+            }
+        }
+
+        async function forceUpdateApp() {
+            let version = await smartDialog({
+                type: 'prompt', title: 'إجبار التحديث 🚀',
+                message: `أدخل رقم الإصدار الجديد الإجباري (مثال: 2.0):  
+<small style="color:#ff4757;">سيتم إيقاف التطبيق القديم عند جميع البقالات حتى يحدّثوا.</small>`,
+                icon: 'fa-rocket', color: '#f5af19', inputType: 'number'
+            });
+            if(version) {
+                showToast("⏳ جاري تعميم التحديث الإجباري...");
+                let token = localStorage.getItem('admin_token');
+                let res = await fetch('/api/admin/force_update', {
+                    method: 'POST', headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
+                    body: JSON.stringify({version: version})
+                });
+                let data = await res.json();
+                if(data.status === 'success') {
+                    showToast("✅ تم إرسال أمر التحديث لجميع الأجهزة!");
+                }
+            }
+        }
+
+        let isMaintenance = false;
+        async function toggleMaintenanceMode() {
+            let confirm = await smartDialog({
+                type: 'confirm', title: 'وضع الصيانة ⚠️',
+                message: isMaintenance 
+                    ? 'هل تريد إلغاء وضع الصيانة وإعادة تشغيل النظام؟' 
+                    : `هل أنت متأكد من إغلاق النظام بالكامل؟\n<small style="color:#ff4757;">لن يتمكن أي زبون أو بقالة من الدخول.</small>`,
+                icon: 'fa-power-off', color: '#ff4757'
+            });
+            
+            if(confirm) {
+                showToast("⏳ جاري تحديث حالة النظام...");
+                let token = localStorage.getItem('admin_token');
+                let newStatus = !isMaintenance;
+                
+                try {
+                    let res = await fetch('/api/admin/maintenance', {
+                        method: 'POST', 
+                        headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
+                        body: JSON.stringify({ active: newStatus })
+                    });
+                    let data = await res.json();
+                    
+                    if(data.status === 'success') {
+                        isMaintenance = newStatus;
+                        document.getElementById('maintenance-icon').style.color = isMaintenance ? '#1e293b' : '#fff';
+                        showToast(isMaintenance ? "🔴 تم تفعيل وضع الصيانة! النظام مغلق الآن." : "🟢 تم إيقاف وضع الصيانة. النظام يعمل الآن.");
+                    } else {
+                        showToast("❌ فشل تحديث حالة النظام", false);
+                    }
+                } catch(e) {
+                    showToast("❌ حدث خطأ في الاتصال بالسيرفر", false);
+                }
+            }
+        }
+
+        async function enableAdminNotifications() {                   
+            let btn = document.getElementById('enable-notif-btn');
+            let originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التفعيل...';
+            
+            // 1. فحص تطبيق الأندرويد (APK)
+            if (window.Capacitor && window.Capacitor.Plugins.PushNotifications) {
+                try {
+                    const PushNotifications = window.Capacitor.Plugins.PushNotifications;
+                    let permStatus = await PushNotifications.requestPermissions();
+                    if (permStatus.receive === 'granted') {
+                        await PushNotifications.register();
+                        showToast("✅ تم تفعيل إشعارات التطبيق بنجاح!");
+                        btn.style.background = '#0ba360';
+                        btn.style.color = 'white';
+                        btn.innerHTML = '<i class="fas fa-check"></i> الإشعارات مفعلة';
+                    } else {
+                        showToast("❌ تم رفض الصلاحية من إعدادات الهاتف", false);
+                        btn.innerHTML = originalText;
+                    }
+                } catch (e) {
+                    showToast("❌ خطأ في تفعيل إشعارات الهاتف", false);
+                    btn.innerHTML = originalText;
+                }
+                return;
+            }
+
+            // 2. فحص متصفح الويب
+            if (!messaging) {
+                btn.innerHTML = originalText;
+                return showToast("الإشعارات غير مدعومة في هذا المتصفح", false);
+            }
+            
+            try {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+                    const fcmToken = await messaging.getToken({ vapidKey: "BODQ2Cfg58GdgHr4_K8tykpcPCwKhElwMV9P0yKkK_rk3EnkgTwBenSfLEw4gqwjWBxhDVWrB9irt0d_EvPiFk8", serviceWorkerRegistration: registration });
+                    
+                    // 👇 السطر الذي كان مفقوداً: إرسال التوكن للسيرفر 👇
+                    let token = localStorage.getItem('admin_token');
+                    await fetch('/api/subscribe', {
+                        method: 'POST', 
+                        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                        body: JSON.stringify({ subscription: fcmToken })
+                    });
+                    
+                    showToast("✅ تم تفعيل الإشعارات بنجاح!");
+                    btn.style.background = '#0ba360';
+                    btn.style.color = 'white';
+                    btn.innerHTML = '<i class="fas fa-check"></i> الإشعارات مفعلة';
+                }
+            } catch (e) {
+                showToast("❌ فشل تفعيل الإشعارات", false);
+                btn.innerHTML = originalText;
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('admin_token');
+            localStorage.removeItem('user_role'); // لمنع الدخول التلقائي
+            localStorage.removeItem('saved_pass');
+            window.location.href = '/'; // العودة للبوابة الرئيسية
+        }
+
+        // دالة بدء تشغيل الخدمات الخلفية للمدير
+        function startAdminServices() {
+            loadServerHealth();
+            loadCatalog();
+            setInterval(loadServerHealth, 10000);
+        }
+
+        // ================= الرسوم البيانية =================
+        let growthChartInstance = null;
+        let packageChartInstance = null;
+
+        function renderCharts(growthData, packageData) {
+            document.getElementById('charts-container').style.display = 'grid';
+            Chart.defaults.color = '#94a3b8';
+            Chart.defaults.font.family = "'Cairo', sans-serif";
+
+            const ctxGrowth = document.getElementById('growthChart').getContext('2d');
+            if(growthChartInstance) growthChartInstance.destroy();
+            
+            growthChartInstance = new Chart(ctxGrowth, {
+                type: 'line',
+                data: {
+                    labels: growthData.labels,
+                    datasets: [{
+                        label: 'بقالات جديدة',
+                        data: growthData.values,
+                        borderColor: '#00f3ff',
+                        backgroundColor: 'rgba(0, 243, 255, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#050914',
+                        pointBorderColor: '#00f3ff',
+                        pointRadius: 5
+                    }]
+                },
+                options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { grid: { color: 'rgba(255,255,255,0.05)' } }, x: { grid: { color: 'rgba(255,255,255,0.05)' } } } }
+            });
+
+            const ctxPackage = document.getElementById('packageChart').getContext('2d');
+            if(packageChartInstance) packageChartInstance.destroy();
+            
+            packageChartInstance = new Chart(ctxPackage, {
+                type: 'doughnut',
+                data: {
+                    labels: ['VIP', 'مجاني'],
+                    datasets: [{
+                        data: packageData,
+                        backgroundColor: ['#f5af19', '#3b82f6'],
+                        borderColor: '#050914',
+                        borderWidth: 2,
+                        hoverOffset: 10
+                    }]
+                },
+                options: { responsive: true, cutout: '70%', plugins: { legend: { position: 'bottom' } } }
+            });
+        }
+
+        // التحقق من الدخول المسبق أو الدخول السلس من البوابة الرئيسية
+        if(localStorage.getItem('admin_token')) {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('dashboard-wrapper').style.display = 'flex';
+            loadDashboard();
+            startAdminServices();
+        } else if (localStorage.getItem('user_role') === 'admin' && localStorage.getItem('saved_pass')) {
+            // 🚀 الدخول السلس (Seamless Login): أخذ كلمة المرور من البوابة الرئيسية والدخول بصمت
+            document.getElementById('login-screen').style.display = 'none';
+            loginAdmin(localStorage.getItem('saved_pass'));
+        } else {
+            // تشغيل البصمة تلقائياً إذا لم يكن مسجلاً الدخول
+            triggerAdminBiometricLogin();
+        }
+
+        // ================= 💬 نظام المحادثة الفورية (القيادة العليا) =================
+        window.loadAdminChats = async function() {
+            let token = localStorage.getItem('admin_token');
+            let list = document.getElementById('admin-chat-list');
+            
+            // عدم إظهار جاري التحميل إذا كانت القائمة ممتلئة مسبقاً (لتحديث هادئ في الخلفية)
+            if(!list.innerHTML.includes('tr')) {
+                list.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#aaa;">جاري التحميل... ⏳</td></tr>';
+            }
+            
+            try {
+                let res = await fetch('/api/admin/chat/list', { headers: {'Authorization': 'Bearer ' + token} });
+                let data = await res.json();
+                if (data.status === 'success') {
+                    let html = '';
+                    let totalUnread = 0; // 👈 حساب إجمالي الرسائل غير المقروءة
+                    
+                    data.chats.forEach(c => {
+                        totalUnread += c.unread;
+                        let badge = c.unread > 0 ? `<span class="badge badge-danger">${c.unread} جديد</span>` : '';
+                        html += `
+                        <tr style="cursor: pointer; transition: 0.2s;" onclick="openAdminChat(${c.id}, '${c.name.replace(/'/g, "\\'")}')" onmouseover="this.style.background='rgba(0,243,255,0.1)'" onmouseout="this.style.background='transparent'">
+                            <td style="font-weight: bold; color: white;">🏪 ${c.name} ${badge}</td>
+                            <td style="color: var(--text-light); max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${c.last_message || 'لا توجد رسائل'}</td>
+                            <td dir="ltr" style="font-size: 12px; color: var(--text-light);">${c.time}</td>
+                            <td><button class="btn" style="padding: 5px 10px; font-size: 12px;"><i class="fas fa-reply"></i> رد</button></td>
+                        </tr>`;
+                    });
+                    list.innerHTML = html || '<tr><td colspan="4"><div class="empty-state"><i class="fas fa-comments"></i><h4>لا توجد رسائل</h4><p>صندوق الدعم الفني فارغ حالياً.</p></div></td></tr>';
+                    
+                    // 👇 تحديث العداد العائم (FAB Badge) 👇
+                    let fabBadge = document.getElementById('chat-fab-badge');
+                    if(fabBadge) {
+                        if(totalUnread > 0) {
+                            fabBadge.innerText = totalUnread;
+                            fabBadge.style.display = 'flex';
+                            fabBadge.style.animation = 'popIn 0.3s ease';
+                        } else {
+                            fabBadge.style.display = 'none';
+                        }
+                    }
+                }
+            } catch (e) {
+                list.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--danger);">❌ خطأ في الاتصال</td></tr>';
+            }
+        };
+
+        window.openAdminChat = async function(storeId, storeName) {
+            document.getElementById('adminChatModal').style.display = 'flex';
+            document.getElementById('admin-chat-store-name').innerText = '🏪 ' + storeName;
+            document.getElementById('admin-chat-store-id').value = storeId;
+            
+            let list = document.getElementById('admin-chat-messages');
+            list.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">جاري التحميل... ⏳</div>';
+            
+            let token = localStorage.getItem('admin_token');
+            try {
+                let res = await fetch(`/api/admin/chat/history?store_id=${storeId}`, { headers: {'Authorization': 'Bearer ' + token} });
+                let data = await res.json();
+                if (data.status === 'success') {
+                    let html = '';
+                    data.messages.forEach(m => {
+                        let bubbleClass = m.sender === 'admin' ? 'admin' : 'store';
+                        html += `
+                        <div class="chat-bubble ${bubbleClass}">
+                            ${escapeHTML(m.text)} <!-- 👈 تم إضافة الحماية هنا -->
+                            <span class="chat-time">${m.time}</span>
+                        </div>`;
+                    });
+                    list.innerHTML = html || '<p style="text-align:center; color:#aaa;">لا توجد رسائل.</p>';
+                    list.scrollTop = list.scrollHeight;
+                    loadAdminChats(); // تحديث القائمة لإزالة الشارة الحمراء
+                }
+            } catch (e) {
+                list.innerHTML = '<p style="text-align:center; color:var(--danger);">❌ خطأ في الاتصال</p>';
+            }
+        };
+
+        window.sendAdminChatMessage = async function() {
+            let input = document.getElementById('admin-chat-input');
+            let text = input.value.trim();
+            let storeId = document.getElementById('admin-chat-store-id').value;
+            if (!text || !storeId) return;
+            
+            input.value = '';
+            let list = document.getElementById('admin-chat-messages');
+            
+            if(list.innerHTML.includes('لا توجد رسائل')) list.innerHTML = '';
+            let timeNow = new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
+            list.innerHTML += `<div class="chat-bubble admin">${text}<span class="chat-time">${timeNow}</span></div>`;
+            list.scrollTop = list.scrollHeight;
+            
+            let token = localStorage.getItem('admin_token');
+            try {
+                await fetch('/api/admin/chat/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ store_id: parseInt(storeId), message: text })
+                });
+                loadAdminChats(); // تحديث آخر رسالة في القائمة
+            } catch (e) {
+                showToast("❌ فشل إرسال الرسالة", false);
+            }
+        };
+
+        // ================= دالة التحكم بالقوائم المنسدلة (محدثة ومضمونة) =================
+        function toggleDropdown(event, id) {
+            event.stopPropagation(); 
+            let targetMenu = document.getElementById(id);
+            let isCurrentlyOpen = targetMenu.classList.contains('show');
+
+            // 1. إغلاق جميع القوائم المفتوحة أولاً
+            document.querySelectorAll('.dropdown-content').forEach(el => {
+                el.classList.remove('show');
+            });
+
+            // 2. إذا لم تكن القائمة مفتوحة، قم بفتحها
+            if (!isCurrentlyOpen) {
+                targetMenu.classList.add('show');
+            }
+        }
+
+        // إغلاق القائمة عند الضغط في أي مكان خارجها
+        window.addEventListener('click', function(event) {
+            // استخدام closest يضمن أن الضغطة سواء على الأيقونة أو الزر لن تغلق القائمة بالخطأ
+            if (!event.target.closest('.action-btn')) {
+                document.querySelectorAll('.dropdown-content').forEach(el => {
+                    el.classList.remove('show');
+                });
+            }
+        });
+
+        // ================= لوحة الأوامر السريعة (Command Palette) =================
+        const commands = [
+            // الصفحات الرئيسية
+            { title: 'الذهاب إلى الإحصائيات', icon: 'fa-chart-pie', action: () => switchTab('dashboard', { innerText: 'الإحصائيات العامة' }) },
+            { title: 'إدارة البقالات', icon: 'fa-store', action: () => switchTab('stores', { innerText: 'إدارة البقالات' }) },
+            { title: 'إدارة الاشتراكات (VIP)', icon: 'fa-crown', action: () => switchTab('subscriptions', { innerText: 'إدارة الاشتراكات' }) },
+            { title: 'الدعم الفني والمحادثات', icon: 'fa-headset', action: () => { switchTab('support', { innerText: 'الدعم الفني' }); loadAdminChats(); } },
+            
+            // الرادارات المفقودة في الهاتف
+            { title: 'رادار الأرباح والاشتراكات (Billing)', icon: 'fa-money-bill-wave', action: () => { switchTab('billing', { innerText: 'رادار الأرباح' }); loadBillingStats(); } },
+            { title: 'رادار الخمول والانسحاب (Churn)', icon: 'fa-satellite-dish', action: () => { switchTab('churn-radar', { innerText: 'رادار الخمول' }); loadChurnRadar(); } },
+
+            // صفحات النظام والإدارة
+            { title: 'سجل العمليات (Terminal)', icon: 'fa-terminal', action: () => switchTab('terminal', { innerText: 'سجل العمليات' }) },
+            { title: 'الكتالوج المركزي', icon: 'fa-globe', action: () => switchTab('catalog', { innerText: 'الكتالوج المركزي' }) },
+            { title: 'سلة المهملات', icon: 'fa-trash-restore', action: () => switchTab('recycle-bin', { innerText: 'سلة المهملات' }) },
+            { title: 'الإذاعة والإشعارات', icon: 'fa-bullhorn', action: () => switchTab('broadcast', { innerText: 'الإذاعة والإشعارات' }) },
+            { title: 'الإعدادات والأمان', icon: 'fa-cog', action: () => switchTab('settings', { innerText: 'الإعدادات والأمان' }) },
+            
+            // الإجراءات السريعة (God Mode)
+            { title: 'تفعيل/إيقاف وضع الصيانة', icon: 'fa-power-off', action: toggleMaintenanceMode },
+            { title: 'تحميل نسخة احتياطية', icon: 'fa-database', action: downloadBackup },
+            { title: 'تسجيل الخروج', icon: 'fa-sign-out-alt', action: logout }
+        ];
+
+        // فتح اللوحة عند الضغط على Ctrl+K أو Cmd+K
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                openCommandPalette();
+            }
+            if (e.key === 'Escape') {
+                closeCommandPalette();
+            }
+        });
+
+        function openCommandPalette() {
+            document.getElementById('command-palette').style.display = 'flex';
+            document.getElementById('cmd-input').value = '';
+            filterCommands(); // عرض كل الأوامر مبدئياً
+            setTimeout(() => document.getElementById('cmd-input').focus(), 100);
+        }
+
+        function closeCommandPalette(e) {
+            document.getElementById('command-palette').style.display = 'none';
+        }
+
+        function filterCommands() {
+            let query = document.getElementById('cmd-input').value.toLowerCase();
+            let resultsDiv = document.getElementById('cmd-results');
+            resultsDiv.innerHTML = '';
+
+            let filtered = commands.filter(cmd => cmd.title.toLowerCase().includes(query));
+            
+            if (filtered.length === 0) {
+                resultsDiv.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-light);">لا توجد نتائج مطابقة</div>';
+                return;
+            }
+
+            filtered.forEach((cmd, index) => {
+                let item = document.createElement('div');
+                item.className = 'cmd-item';
+                item.innerHTML = `<i class="fas ${cmd.icon}"></i> <span>${cmd.title}</span> <span class="cmd-shortcut">↵ Enter</span>`;
+                item.onclick = () => {
+                    closeCommandPalette();
+                    cmd.action();
+                };
+                resultsDiv.appendChild(item);
+            });
+        }
+
+        // ================= ميزة السحب للتحديث (Pull to Refresh) =================
+        let touchStartY = 0;
+        const contentArea = document.getElementById('main-content-area');
+        const ptrIndicator = document.getElementById('ptr-indicator');
+
+        contentArea.addEventListener('touchstart', (e) => {
+            // نسجل نقطة البداية فقط إذا كنا في أعلى الصفحة تماماً
+            if (contentArea.scrollTop === 0) {
+                touchStartY = e.touches[0].clientY;
+            }
+        }, { passive: true });
+
+        contentArea.addEventListener('touchmove', (e) => {
+            if (touchStartY === 0) return;
+            let touchCurrentY = e.touches[0].clientY;
+            let pullDistance = touchCurrentY - touchStartY;
+
+            // إذا سحب للأسفل مسافة كافية (أكثر من 80 بكسل)
+            if (pullDistance > 80 && contentArea.scrollTop === 0) {
+                ptrIndicator.style.height = '50px';
+                ptrIndicator.style.opacity = '1';
+            }
+        }, { passive: true });
+
+        contentArea.addEventListener('touchend', (e) => {
+            if (ptrIndicator.style.opacity === '1') {
+                if(navigator.vibrate) navigator.vibrate(20); // اهتزاز خفيف عند التحديث
+                
+                // استدعاء دالة تحديث البيانات
+                loadDashboard(); 
+                
+                // إخفاء المؤشر بعد ثانية لإعطاء إحساس باكتمال التحميل
+                setTimeout(() => {
+                    ptrIndicator.style.height = '0';
+                    ptrIndicator.style.opacity = '0';
+                    touchStartY = 0;
+                }, 1000);
+            } else {
+                touchStartY = 0;
+            }
+        });
+
+        // ================= نظام المظهر (فاتح / داكن) =================
+        function toggleTheme() {
+            const body = document.body;
+            const themeIcon = document.querySelector('#theme-toggle-btn i');
+            
+            if (body.classList.contains('light-mode')) {
+                // العودة للوضع الداكن
+                body.classList.remove('light-mode');
+                localStorage.setItem('app_theme', 'dark');
+                themeIcon.className = 'fas fa-sun';
+                themeIcon.style.color = 'var(--warning)'; // شمس صفراء
+            } else {
+                // الانتقال للوضع الفاتح
+                body.classList.add('light-mode');
+                localStorage.setItem('app_theme', 'light');
+                themeIcon.className = 'fas fa-moon';
+                themeIcon.style.color = 'var(--primary-dark)'; // قمر أزرق
+            }
+            
+            // تحديث ألوان الرسوم البيانية إذا كانت موجودة
+            if(typeof Chart !== 'undefined') {
+                Chart.defaults.color = body.classList.contains('light-mode') ? '#64748b' : '#94a3b8';
+                if(growthChartInstance) growthChartInstance.update();
+                if(packageChartInstance) packageChartInstance.update();
+            }
+        }
+
+        // التحقق من المظهر المحفوظ عند فتح التطبيق
+        document.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.getItem('app_theme') === 'light') {
+                document.body.classList.add('light-mode');
+                const themeIcon = document.querySelector('#theme-toggle-btn i');
+                if(themeIcon) {
+                    themeIcon.className = 'fas fa-moon';
+                    themeIcon.style.color = 'var(--primary-dark)';
+                }
+            }
+        });
+
+    </script>
+
+    <!-- ================= نظام النوافذ الذكية ================= -->
+    <div id="smart-dialog-overlay">
+        <div class="smart-dialog-content">
+            <div id="sd-icon" class="sd-icon"></div>
+            <h3 id="sd-title" class="sd-title"></h3>
+            <p id="sd-msg" class="sd-msg"></p>
+            <input type="text" id="sd-input" class="sd-input" autocomplete="off">
+            <div class="sd-buttons">
+                <button id="sd-confirm" class="sd-btn sd-confirm">تأكيد</button>
+                <button id="sd-cancel" class="sd-btn sd-cancel">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- كود ربط الإشعارات الأصلية (Native) لتطبيق الأندرويد -->
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (window.Capacitor && window.Capacitor.Plugins.PushNotifications) {
+                const PushNotifications = window.Capacitor.Plugins.PushNotifications;
+                try {                    
+                await PushNotifications.createChannel({                                   
+                    id: 'dukkani_alerts_vip', // 👈 السطر السحري الجديد
+                    name: 'إشعارات دُكّاني',
+                    description: 'تنبيهات الطلبات الفورية',
+                    importance: 5,
+                    visibility: 1,
+                    sound: 'bell'  
+                });
+
+                    // 👇 التعديل السحري: إرسال التوكن للسيرفر لكي يعرف كيف يصل إليك 👇
+                    PushNotifications.addListener('registration', async (fcmToken) => {
+                        let adminToken = localStorage.getItem('admin_token');
+                        if (adminToken) {
+                            try {
+                                await fetch('/api/subscribe', {
+                                    method: 'POST', 
+                                    headers: { 
+                                        'Content-Type': 'application/json', 
+                                        'Authorization': 'Bearer ' + adminToken 
+                                    },
+                                    body: JSON.stringify({ subscription: fcmToken.value })
+                                });
+                                console.log("✅ Admin Push Token Registered");
+                            } catch(e) {}
+                        }
+                    });
+
+                    PushNotifications.addListener('pushNotificationReceived', (notification) => {
+                        showToast("🔔 " + notification.title + " - " + notification.body);
+                    });
+                    
+                    // 🌟 التفاعل مع نقرة الإشعار وتوجيه الشاشة 🌟
+                    PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
+                        const data = notification.notification.data;
+                        if (data && (data.action || data.route)) {
+                            sessionStorage.setItem('pendingDeepLink', JSON.stringify({ route: data.action || data.route }));
+                            if (typeof window.executePendingDeepLink === 'function') window.executePendingDeepLink();
+                        }
+                    });
+
+                    // 🚀 السطر السحري: طلب الصلاحية والتسجيل فور فتح التطبيق
+                    PushNotifications.checkPermissions().then((res) => {
+                        if (res.receive === 'granted') {
+                            PushNotifications.register();
+                        } else {
+                            PushNotifications.requestPermissions().then((perm) => {
+                                if (perm.receive === 'granted') PushNotifications.register();
+                            });
+                        }
+                    });
+                    
+                } catch (e) { console.error(e); }
+            }
+        });
+    </script>
+    <!-- لوحة الأوامر السريعة -->
+    <div id="command-palette" onclick="closeCommandPalette(event)">
+        <div class="cmd-box" onclick="event.stopPropagation()">
+            <div class="cmd-input-wrapper">
+                <i class="fas fa-search"></i>
+                <input type="text" id="cmd-input" class="cmd-input" placeholder="ابحث عن بقالة، أو اكتب أمراً (مثال: صيانة)..." autocomplete="off" onkeyup="filterCommands()">
+                <span class="cmd-shortcut">ESC</span>
+            </div>
+            <div class="cmd-results" id="cmd-results">
+                <!-- النتائج ستظهر هنا -->
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

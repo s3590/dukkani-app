@@ -1,0 +1,59 @@
+{
+  "id": "dukkani-saas-v2",
+  "name": "دُكّاني - المنظومة الذكية للبقالة",
+  "short_name": "دُكّاني",
+  "description": "نظام متابعة حسابات وديون البقالة والطلب المباشر والكاشير السريع.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "background_color": "#0f172a",
+  "theme_color": "#0ba360",
+  "orientation": "any",
+  "dir": "rtl",
+  "lang": "ar",
+  "categories": ["shopping", "business", "finance"],
+  "icons": [
+    {
+      "src": "/static/logo_customer.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/logo_customer.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/logo_customer.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "كاشير البقالة (POS)",
+      "short_name": "الكاشير",
+      "description": "فتح شاشة الكاشير السريع والمبيعات",
+      "url": "/pos",
+      "icons": [{ "src": "/static/logo_customer.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "كشف حسابي والديون",
+      "short_name": "حسابي",
+      "description": "متابعة رصيد الديون والدفعات السابقة",
+      "url": "/?action=inbox",
+      "icons": [{ "src": "/static/logo_customer.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "لوحة إدارة المتجر",
+      "short_name": "الإدارة",
+      "description": "إدارة المنتجات، الأسعار، والمخزون",
+      "url": "/manage",
+      "icons": [{ "src": "/static/logo_customer.png", "sizes": "192x192" }]
+    }
+  ]
+}
